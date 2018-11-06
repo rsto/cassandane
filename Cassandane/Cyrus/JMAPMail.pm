@@ -14347,5 +14347,121 @@ sub test_email_copy_intermediary
     $self->assert_equals(JSON::true, $res->[0][1]{list}[0]{mailboxIds}{$dstMboxId});
 }
 
+sub test_issue2550
+    :min_version_3_1 :needs_component_jmap
+{
+    my ($self) = @_;
+    my $jmap = $self->{jmap};
+    my $imaptalk = $self->{store}->get_client();
+
+    xlog "Step 1: Create folder";
+    my $res = $jmap->CallMethods([
+        ['Mailbox/set', {
+            create => {
+                mboxA => {
+                    parentId => undef,
+                    name => 'A',
+                },
+            },
+        }, "R1"],
+    ]);
+    my $mboxIdA = $res->[0][1]{created}{mboxA}{id};
+    $self->assert_not_null($mboxIdA);
+
+    # Repeat twice
+    for (my $i=1; $i<3; $i++) {
+
+        xlog "Step 2 (iteration $i): Query emails and get";
+        $res = $jmap->CallMethods([
+            ["Email/query", {
+                "collapseThreads" => JSON::false,
+                "filter" => {
+                    "conditions" => [{
+                       "inMailbox" => $mboxIdA,
+                    }],
+                    "operator" => "AND"
+                },
+                "limit" => 25,
+                "position" => 0,
+                "sort" => [{
+                    "isAscending" => JSON::false,
+                    "property" => "receivedAt"
+                }],
+            },"#5"],
+            ["Email/get",{
+                "#ids" => {
+                    "name" => "Email/query",
+                    "path" => "/ids",
+                    "resultOf" => "#5"
+                },
+                "properties" => [
+                    "from","threadId","receivedAt","subject","keywords"
+                ],
+            },"#6"]
+        ]);
+        $self->assert_num_equals(0, scalar @{$res->[1][1]{notFound}});
+    
+        xlog "Step 3 (iteration $i): For each email call destroy";
+        my $foundEmailsCount = scalar @{$res->[0][1]{ids}};
+        $res = $jmap->CallMethods([
+            ['Email/set', {
+                destroy => $res->[0][1]{ids},
+            }, '#7'],
+        ]);
+        $self->assert_num_equals($foundEmailsCount, scalar @{$res->[0][1]{destroyed}});
+        
+        xlog "Step 4 (iteration $i): Verify no emails are left";
+        $res = $jmap->CallMethods([
+            ["Email/query", {
+                "collapseThreads" => JSON::false,
+                "filter" => {
+                    "conditions" => [{
+                       "inMailbox" => $mboxIdA,
+                    }],
+                    "operator" => "AND"
+                },
+                "limit" => 25,
+                "position" => 0,
+                "sort" => [{
+                    "isAscending" => JSON::false,
+                    "property" => "receivedAt"
+                }],
+            },"#8"],
+        ]);
+        $self->assert_num_equals(0, scalar @{$res->[0][1]{ids}});
+        
+        xlog "Step 5 (iteration $i): Upload MIME message and import";
+        my $email = <<'EOF';
+From: "Some Example Sender" <example@example.com>
+To: baseball@vitaead.com
+Subject: test email
+Date: Wed, 7 Dec 2016 00:21:50 -0500
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+This is a test email.
+EOF
+        $email =~ s/\r?\n/\r\n/gs;
+        my $blobId = $jmap->Upload($email, "message/rfc822")->{blobId};
+        $self->assert_not_null($blobId);
+        $res = $jmap->CallMethods([
+            ['Email/import', {
+                emails => {
+                    "email1" => {
+                        blobId => $blobId,
+                        mailboxIds => {
+                            $mboxIdA =>  JSON::true,
+                        },
+                    },
+                },
+            }, "#9"],
+        ]);
+        my $emailId = $res->[0][1]{created}{email1}{id};
+        $self->assert_not_null($emailId);
+    }
+
+}
+
 
 1;
