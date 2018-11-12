@@ -7707,6 +7707,53 @@ sub test_email_query_moved
     $self->assert_str_equals($emailId2, $res->[1][1]->{ids}[0]);
 }
 
+sub test_email_query_from
+    :min_version_3_1 :needs_component_jmap
+{
+    my ($self) = @_;
+    my $jmap = $self->{jmap};
+    my $imap = $self->{store}->get_client();
+
+    # Create test messages.
+    $self->make_message('3', from => Cassandane::Address->new(
+        name => "A",
+        localpart => 'tie',
+        domain => 'hostZ'
+    ));
+    $self->make_message('2', from => Cassandane::Address->new(
+        name => "",
+        localpart => 'tie',
+        domain => 'hostA'
+    ));
+    $self->make_message('1', from => Cassandane::Address->new(
+        name => "",
+        localpart => 'tie',
+        domain => 'hostZ'
+    ));
+    my $res = $jmap->CallMethods([
+        ['Email/query', {
+            sort => [{ property => 'subject' }],
+        }, 'R1'],
+    ]);
+    $self->assert_num_equals(3, scalar @{$res->[0][1]->{ids}});
+    my $emailId1 = $res->[0][1]{ids}[0];
+    my $emailId2 = $res->[0][1]{ids}[1];
+    my $emailId3 = $res->[0][1]{ids}[2];
+
+    $res = $jmap->CallMethods([
+        ['Email/query', {
+            sort => [
+                { property => 'from' },
+                { property => 'subject'}
+            ],
+        }, 'R1'],
+    ]);
+    $self->assert_num_equals(3, scalar @{$res->[0][1]->{ids}});
+    $self->assert_str_equals($emailId3, $res->[0][1]{ids}[0]);
+    $self->assert_str_equals($emailId2, $res->[0][1]{ids}[1]);
+    $self->assert_str_equals($emailId1, $res->[0][1]{ids}[2]);
+}
+
 
 sub test_misc_collapsethreads_issue2024
     :min_version_3_1 :needs_component_jmap
