@@ -52,7 +52,10 @@ use Cassandane::Config;
 sub new
 {
     my $class = shift;
-    return $class->SUPER::new({ replica => 1 }, @_);
+    return $class->SUPER::new({
+        replica => 1,
+        adminstore => 1
+    }, @_);
 }
 
 sub set_up
@@ -920,6 +923,35 @@ sub test_replication_with_modified_seen_flag
     $res = $rtalk->fetch("3", "(flags)");
     $flags = $res->{3}->{flags};
     $self->assert(not grep { $_ eq "\\Seen"} @$flags);
+}
+
+sub test_xxx
+{
+    my ($self) = @_;
+
+    my $master_store = $self->{master_store};
+    my $replica_store = $self->{replica_store};
+    my $admintalk = $self->{adminstore}->get_client();
+    $self->{instance}->create_user("other");
+
+#    xlog "generating message A";
+#    my %exp;
+#    $exp{A} = $self->make_message("Message A", store => $master_store);
+
+#    $self->check_messages(\%exp, store => $master_store);
+#    $self->check_messages({}, store => $replica_store);
+   
+    xlog "XXXXXXXXXXXXXX setacl";
+    $admintalk->setacl("user.other", "cassandane", "lr") or die;
+
+    xlog "XXXXXXXXXXXXXX run replication";
+    $self->run_replication();
+    #$self->check_replication('cassandane');
+
+    #xlog "After replication, the master should still have all four messages";
+    #$self->check_messages(\%exp, store => $master_store);
+    #xlog "After replication, the replica should now have all four messages";
+    #$self->check_messages(\%exp, store => $replica_store);
 }
 
 1;
