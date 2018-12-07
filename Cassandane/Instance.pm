@@ -1743,6 +1743,7 @@ sub _quota_Z_file
 sub quota_Z_go
 {
     my ($self, $mboxname) = @_;
+    $mboxname =~ s/\./\x1F/g;
     my $filename = $self->_quota_Z_file($mboxname);
 
     xlog "Allowing quota -Z to proceed for $mboxname";
@@ -1758,6 +1759,7 @@ sub quota_Z_go
 sub quota_Z_wait
 {
     my ($self, $mboxname) = @_;
+    $mboxname =~ s/\./\x1F/g;
     my $filename = $self->_quota_Z_file($mboxname);
 
     timed_wait(sub { return (! -f $filename); },

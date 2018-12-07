@@ -160,6 +160,7 @@ sub _zap_quota
 
     my ($c) = ($quotaroot =~ m/^user\.(.)/);
     my $dirname = $self->{instance}->{basedir} . "/conf/quota/$c";
+    $quotaroot =~ s/\./\x1F/g;
     my $filename = "$dirname/$quotaroot";
     mkpath $dirname;
 
