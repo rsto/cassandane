@@ -44,7 +44,7 @@ use DateTime;
 use JSON::XS;
 use Net::CalDAVTalk 0.09;
 use Net::CardDAVTalk 0.03;
-use Mail::JMAPTalk 0.12;
+use Mail::JMAPTalk 0.13;
 use Data::Dumper;
 use Storable 'dclone';
 use MIME::Base64 qw(encode_base64);
@@ -76,6 +76,18 @@ sub new
     }, @args);
 }
 
+sub set_up
+{
+    my ($self) = @_;
+    $self->SUPER::set_up();
+    $self->{jmap}->DefaultUsing([
+        'urn:ietf:params:jmap:core',
+        'urn:ietf:params:jmap:mail',
+        'urn:ietf:params:jmap:submission'
+    ]);
+}
+
+
 sub getinbox
 {
     my ($self, $args) = @_;
@@ -92,7 +104,7 @@ sub getinbox
     return $m{"Inbox"};
 }
 
-sub get_settings
+sub get_account_capabilities
     :min_version_3_1 :needs_component_jmap
 {
     my ($self) = @_;
@@ -102,7 +114,7 @@ sub get_settings
     my $Request;
     my $Response;
 
-    xlog "get settings";
+    xlog "get session";
     $Request = {
         headers => {
             'Authorization' => $jmap->auth_header(),
@@ -115,9 +127,10 @@ sub get_settings
     }
     $self->assert_str_equals('200', $Response->{status});
 
-    my $settings;
-    $settings = eval { decode_json($Response->{content}) } if $Response->{success};
-    return $settings;
+    my $session;
+    $session = eval { decode_json($Response->{content}) } if $Response->{success};
+
+    return $session->{accounts}{cassandane}{accountCapabilities};
 }
 
 
@@ -2380,14 +2393,6 @@ sub test_email_set_keywords
         '$seen' => JSON::true,
     };
     $self->assert_deep_equals($keywords, $jmapmsg->{keywords});
-}
-
-sub test_emailsubmission_capability
-    :min_version_3_1 :needs_component_jmap
-{
-    my ($self) = @_;
-    my $settings = $self->get_settings();
-    $self->assert(exists $settings->{capabilities}->{"urn:ietf:params:jmap:submission"});
 }
 
 sub test_emailsubmission_set
@@ -8990,36 +8995,6 @@ sub test_email_set_patch
     $self->assert_num_equals(1, scalar keys %{$msg->{mailboxIds}});
 }
 
-sub test_capability
-    :min_version_3_1 :needs_component_jmap
-{
-    my ($self) = @_;
-
-    my $jmap = $self->{jmap};
-
-    my $Request;
-    my $Response;
-
-    xlog "get settings";
-    $Request = {
-        headers => {
-            'Authorization' => $jmap->auth_header(),
-        },
-        content => '',
-    };
-    $Response = $jmap->ua->get($jmap->uri(), $Request);
-    if ($ENV{DEBUGJMAP}) {
-        warn "JMAP " . Dumper($Request, $Response);
-    }
-    $self->assert_str_equals('200', $Response->{status});
-
-    my $settings;
-    $settings = eval { decode_json($Response->{content}) } if $Response->{success};
-
-    my $cap = $settings->{capabilities}->{"urn:ietf:params:jmap:mail"};
-    $self->assert($cap->{maxSizeAttachmentsPerEmail} > 0);
-}
-
 sub test_misc_set_oldstate
     :min_version_3_1 :needs_component_jmap
 {
@@ -11247,8 +11222,8 @@ sub test_email_set_update_too_many_mailboxes
     $self->assert_num_equals(1, scalar @{$res->[0][1]->{ids}});
     my $emailId = $res->[0][1]->{ids}[0];
 
-    my $settings = $self->get_settings();
-    my $mailCapabilities = $settings->{capabilities}{'urn:ietf:params:jmap:mail'};
+    my $accountCapabilities = $self->get_account_capabilities();
+    my $mailCapabilities = $accountCapabilities->{'urn:ietf:params:jmap:mail'};
     my $maxMailboxesPerEmail = $mailCapabilities->{maxMailboxesPerEmail};
     $self->assert($maxMailboxesPerEmail > 0);
 
@@ -11292,8 +11267,8 @@ sub test_email_set_update_too_many_keywords
     $self->assert_num_equals(1, scalar @{$res->[0][1]->{ids}});
     my $emailId = $res->[0][1]->{ids}[0];
 
-    my $settings = $self->get_settings();
-    my $mailCapabilities = $settings->{capabilities}{'urn:ietf:params:jmap:mail'};
+    my $accountCapabilities = $self->get_account_capabilities();
+    my $mailCapabilities = $accountCapabilities->{'urn:ietf:params:jmap:mail'};
     my $maxKeywordsPerEmail = $mailCapabilities->{maxKeywordsPerEmail};
     $self->assert($maxKeywordsPerEmail > 0);
 

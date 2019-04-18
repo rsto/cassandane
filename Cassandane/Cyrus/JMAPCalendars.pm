@@ -44,7 +44,7 @@ use DateTime;
 use JSON::XS;
 use Net::CalDAVTalk 0.09;
 use Net::CardDAVTalk 0.03;
-use Mail::JMAPTalk 0.12;
+use Mail::JMAPTalk 0.13;
 use Data::Dumper;
 use Storable 'dclone';
 use Cwd qw(abs_path);
@@ -78,6 +78,10 @@ sub set_up
 {
     my ($self) = @_;
     $self->SUPER::set_up();
+    $self->{jmap}->DefaultUsing([
+        'urn:ietf:params:jmap:core',
+        'urn:ietf:params:jmap:calendars',
+    ]);
 }
 
 sub test_calendar_get
