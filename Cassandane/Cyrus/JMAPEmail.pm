@@ -83,7 +83,9 @@ sub set_up
     $self->{jmap}->DefaultUsing([
         'urn:ietf:params:jmap:core',
         'urn:ietf:params:jmap:mail',
-        'urn:ietf:params:jmap:submission'
+        'urn:ietf:params:jmap:submission',
+        'http://cyrusimap.org/ns/jmap/mail',
+        'http://cyrusimap.org/ns/jmap/quota',
     ]);
 }
 
@@ -4660,7 +4662,7 @@ sub test_email_query_cached
     };
 
     my $using = [
-        'http://cyrusimap.org/ns/performance',
+        'http://cyrusimap.org/ns/jmap/performance',
         'urn:ietf:params:jmap:core',
         'urn:ietf:params:jmap:mail',
     ];
@@ -11097,13 +11099,20 @@ sub test_email_set_update_bulk
 
     my $talk = $self->{store}->get_client();
 
+    my $using = [
+        'http://cyrusimap.org/ns/jmap/debug',
+        'urn:ietf:params:jmap:core',
+        'urn:ietf:params:jmap:mail',
+    ];
+
+
     $talk->create('INBOX.A') or die;
     $talk->create('INBOX.B') or die;
     $talk->create('INBOX.C') or die;
     $talk->create('INBOX.D') or die;
 
     # Get mailboxes
-    my $res = $jmap->CallMethods([['Mailbox/get', {}, "R1"]]);
+    my $res = $jmap->CallMethods([['Mailbox/get', {}, "R1"]], $using);
     $self->assert_not_null($res);
     my %mboxIdByName = map { $_->{name} => $_->{id} } @{$res->[0][1]{list}};
 
@@ -11126,7 +11135,7 @@ sub test_email_set_update_bulk
 
     $res = $jmap->CallMethods([['Email/query', {
         sort => [{ property => 'subject' }],
-    }, 'R1']]);
+    }, 'R1']], $using);
     $self->assert_num_equals(2, scalar @{$res->[0][1]->{ids}});
     my $emailId1 = $res->[0][1]->{ids}[0];
     my $emailId2 = $res->[0][1]->{ids}[1];
@@ -11144,8 +11153,7 @@ sub test_email_set_update_bulk
                 },
             }
         },
-        'cyrusimap.org/debugBulkUpdate' => JSON::true,
-    }, 'R1']]);
+    }, 'R1']], $using);
     $self->make_message('Email3') || die;
 
     # check that the flags made it
@@ -11158,7 +11166,7 @@ sub test_email_set_update_bulk
 
     $res = $jmap->CallMethods([['Email/query', {
         sort => [{ property => 'subject' }],
-    }, 'R1']]);
+    }, 'R1']], $using);
     $self->assert_num_equals(3, scalar @{$res->[0][1]->{ids}});
     my @ids = @{$res->[0][1]->{ids}};
     my $emailId3 = $ids[2];
@@ -11172,8 +11180,7 @@ sub test_email_set_update_bulk
                  "mailboxIds/$mboxIdByName{'D'}" => JSON::true,
             } } @ids,
         },
-        'cyrusimap.org/debugBulkUpdate' => JSON::true,
-    }, 'R1']]);
+    }, 'R1']], $using);
 
     $self->assert_not_null($res);
     $self->assert_not_null($res->[0][1]{updated}{$emailId1});
@@ -11184,7 +11191,7 @@ sub test_email_set_update_bulk
     $res = $jmap->CallMethods([['Email/get', {
         ids => [$emailId1, $emailId2, $emailId3],
         properties => ['mailboxIds'],
-    }, "R1"]]);
+    }, "R1"]], $using);
     my %emailById = map { $_->{id} => $_ } @{$res->[0][1]{list}};
 
     # now we need to test for actual location
@@ -11202,7 +11209,6 @@ sub test_email_set_update_bulk
     $self->assert_deep_equals($wantMailboxesEmail1, $emailById{$emailId1}->{mailboxIds});
     $self->assert_deep_equals($wantMailboxesEmail2, $emailById{$emailId2}->{mailboxIds});
     $self->assert_deep_equals($wantMailboxesEmail3, $emailById{$emailId3}->{mailboxIds});
-
 }
 
 sub test_email_set_update_too_many_mailboxes
@@ -11245,7 +11251,6 @@ sub test_email_set_update_too_many_mailboxes
                 mailboxIds => \%mboxIds,
             },
         },
-        'cyrusimap.org/debugBulkUpdate' => JSON::true,
    }, 'R1']]);
    $self->assert_str_equals('tooManyMailboxes', $res->[0][1]{notUpdated}{$emailId}{type});
 }
@@ -11283,7 +11288,6 @@ sub test_email_set_update_too_many_keywords
                 keywords => \%keywords,
             },
         },
-        'cyrusimap.org/debugBulkUpdate' => JSON::true,
    }, 'R1']]);
    $self->assert_str_equals('tooManyKeywords', $res->[0][1]{notUpdated}{$emailId}{type});
 }
@@ -12007,12 +12011,6 @@ sub test_email_set_getquota
     my $service = $self->{instance}->get_service("http");
     my $inboxId = $self->getinbox()->{id};
 
-    my $using = [
-        'http://cyrusimap.org/ns/quota',
-        'urn:ietf:params:jmap:core',
-        'urn:ietf:params:jmap:mail',
-    ];
-
     my $res;
 
     $res = $jmap->CallMethods([
@@ -12020,7 +12018,7 @@ sub test_email_set_getquota
             accountId => 'cassandane',
             ids => undef,
         }, 'R1'],
-    ], $using);
+    ]);
 
     my $mailQuota = $res->[0][1]{list}[0];
     $self->assert_str_equals('mail', $mailQuota->{id});
@@ -12053,7 +12051,7 @@ sub test_email_set_getquota
             }
         }, "R1"],
         ['Quota/get', {}, 'R2'],
-    ], $using);
+    ]);
 
     $self->assert_str_equals('Quota/get', $res->[1][0]);
     $mailQuota = $res->[1][1]{list}[0];
@@ -12635,7 +12633,7 @@ sub test_searchsnippet_get_attachment
     $self->{instance}->run_command({cyrus => 1}, 'squatter', '-v');
 
     my $using = [
-        'http://cyrusimap.org/ns/search',
+        'http://cyrusimap.org/ns/jmap/search',
         'urn:ietf:params:jmap:core',
         'urn:ietf:params:jmap:mail',
     ];

@@ -81,6 +81,7 @@ sub set_up
     $self->{jmap}->DefaultUsing([
         'urn:ietf:params:jmap:core',
         'urn:ietf:params:jmap:calendars',
+        'http://cyrusimap.org/ns/jmap/calendars',
     ]);
 }
 
