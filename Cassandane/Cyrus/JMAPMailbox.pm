@@ -3557,5 +3557,50 @@ sub test_mailbox_set_subscriptions_rename_children
     $self->assert_str_equals('INBOX.B.C', $subdata->[0][2]);
 }
 
+sub test_mailbox_changes_shared_updatedproperties
+    :min_version_3_1 :needs_component_jmap
+{
+    my ($self) = @_;
+
+    my $jmap = $self->{jmap};
+    my $imaptalk = $self->{store}->get_client();
+    my $admintalk = $self->{adminstore}->get_client();
+
+    # Create user 'other' and share read-only mailbox A
+    $self->{instance}->create_user("other");
+    $admintalk->create("user.other.A") or die;
+    $admintalk->setacl("user.other.A", "cassandane", "lr") or die;
+
+    # Get id for mailbox A and account mailbox state
+    my $res = $jmap->CallMethods([['Mailbox/get', {
+        accountId => 'other',
+        properties => ['name'],
+    }, "R1"]]);
+    $self->assert_str_equals('A', $res->[0][1]{list}[0]{name});
+    my $mboxIdA = $res->[0][1]{list}[0]{id};
+    $self->assert_not_null($mboxIdA);
+    my $state = $res->[0][1]->{state};
+    $self->assert_not_null($state);
+
+    # Create email via IMAP in mailbox A
+    $self->{adminstore}->set_folder('user.other.A');
+    $self->make_message("Email", store => $self->{adminstore}) or die;
+
+    # Fetch changes
+    $res = $jmap->CallMethods([['Mailbox/changes', {
+        accountId => 'other',
+        sinceState => $state,
+    }, "R1"]]);
+    $self->assert_deep_equals([
+        'totalEmails',
+        'unreadEmails',
+        'totalThreads',
+        'unreadThreads'
+    ], $res->[0][1]{updatedProperties});
+    $self->assert_deep_equals([], $res->[0][1]{created});
+    $self->assert_deep_equals([$mboxIdA], $res->[0][1]{updated});
+    $self->assert_deep_equals([], $res->[0][1]{destroyed});
+}
+
 
 1;
