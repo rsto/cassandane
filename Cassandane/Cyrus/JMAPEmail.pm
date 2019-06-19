@@ -13460,5 +13460,102 @@ sub test_email_query_not_match
     $self->assert_str_equals($emailId1, $res->[0][1]{ids}[0]);
 }
 
+sub test_email_query_from_contactgroupid
+    :min_version_3_1 :needs_component_jmap
+{
+    my ($self) = @_;
+    my $jmap = $self->{jmap};
+
+    my $using = [
+        'urn:ietf:params:jmap:core',
+        'urn:ietf:params:jmap:mail',
+        'https://cyrusimap.org/ns/jmap/mail',
+        'https://cyrusimap.org/ns/jmap/contacts',
+    ];
+
+    my $res = $jmap->CallMethods([
+        ['Contact/set', {
+            create => {
+                contact1 => {
+                    emails => [{
+                        type => 'personal',
+                        value => 'contact1@local',
+                    }]
+                },
+                contact2 => {
+                    emails => [{
+                        type => 'personal',
+                        value => 'contact2@local',
+                    }]
+                },
+            }
+        }, 'R1'],
+        ['ContactGroup/set', {
+            create => {
+                contactGroup1 => {
+                    name => 'contactGroup1',
+                    contactIds => ['#contact1', '#contact2'],
+                }
+            }
+        }, 'R2'],
+    ], $using);
+    $self->assert_not_null($res->[0][1]{created}{contact1});
+    $self->assert_not_null($res->[0][1]{created}{contact2});
+    $self->assert_not_null($res->[1][1]{created}{contactGroup1});
+    my $contactGroupId = $res->[1][1]{created}{contactGroup1}{id};
+    $self->assert_not_null($contactGroupId);
+
+    $self->make_message("msg1", from => Cassandane::Address->new(
+        localpart => 'contact1', domain => 'local'
+    )) or die;
+    $self->make_message("msg2", from => Cassandane::Address->new(
+        localpart => 'contact2', domain => 'local'
+    )) or die;
+    $self->make_message("msg3", from => Cassandane::Address->new(
+        localpart => 'neither', domain => 'local'
+    )) or die;
+
+    $res = $jmap->CallMethods([
+        ['Email/query', {
+            sort => [{ property => "subject" }],
+        }, 'R1']
+    ], $using);
+    $self->assert_num_equals(3, scalar @{$res->[0][1]{ids}});
+    my $emailId1 = $res->[0][1]{ids}[0];
+    my $emailId2 = $res->[0][1]{ids}[1];
+    my $emailId3 = $res->[0][1]{ids}[2];
+
+    $res = $jmap->CallMethods([
+        ['Email/query', {
+            filter => {
+                fromContactGroupId => $contactGroupId
+            },
+            sort => [
+                { property => "subject" }
+            ],
+        }, 'R1']
+    ], $using);
+    $self->assert_num_equals(2, scalar @{$res->[0][1]{ids}});
+    $self->assert_str_equals($emailId1, $res->[0][1]{ids}[0]);
+    $self->assert_str_equals($emailId1, $res->[0][1]{ids}[1]);
+
+    $res = $jmap->CallMethods([
+        ['Email/query', {
+            filter => {
+                operator => 'NOT',
+                conditions => [{
+                    fromContactGroupId => $contactGroupId
+                }]
+            },
+            sort => [
+                { property => "subject" }
+            ],
+        }, 'R1']
+    ], $using);
+    $self->assert_num_equals(1, scalar @{$res->[0][1]{ids}});
+    $self->assert_str_equals($emailId3, $res->[0][1]{ids}[0]);
+}
+
+
 
 1;
