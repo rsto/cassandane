@@ -508,6 +508,102 @@ sub test_calendar_set_issubscribed
     $self->assert_equals(JSON::true, $res->[1][1]{list}[0]{isSubscribed});
 }
 
+sub test_calendar_set_color
+    :min_version_3_1 :needs_component_jmap
+{
+    my ($self) = @_;
+
+    my $jmap = $self->{jmap};
+
+    my $res = $jmap->CallMethods([
+        ['Calendar/set', {
+            create => {
+                '1' => {
+                    name => 'A',
+                    color => 'blue',
+                }
+            },
+        }, 'R1'],
+        ['Calendar/get', {
+            ids => ['#1'],
+            properties => ['color'],
+        }, 'R2'],
+    ]);
+    $self->assert(exists $res->[0][1]{created}{1});
+    $self->assert_str_equals('blue', $res->[1][1]{list}[0]{color});
+    my $calendarId = $res->[0][1]{created}{"1"}{id};
+
+    $res = $jmap->CallMethods([
+        ['Calendar/set', {
+            update => {
+                $calendarId => {
+                    color => 'green',
+                }
+            },
+        }, 'R1'],
+        ['Calendar/get', {
+            ids => [$calendarId],
+            properties => ['color'],
+        }, 'R2'],
+    ]);
+    $self->assert(exists $res->[0][1]{updated}{$calendarId});
+    $self->assert_str_equals('green', $res->[1][1]{list}[0]{color});
+}
+
+sub test_calendar_set_color_shared
+    :min_version_3_1 :needs_component_jmap
+{
+    my ($self) = @_;
+
+    my $jmap = $self->{jmap};
+    my $admintalk = $self->{adminstore}->get_client();
+    my $service = $self->{instance}->get_service("http");
+
+    xlog "create shared account";
+    $admintalk->create("user.other");
+    $admintalk->setacl("user.other", admin => 'lrswipkxtecdan');
+
+    xlog "create and share calendar";
+    my $otherCalDAV = Net::CalDAVTalk->new(
+        user => "other",
+        password => 'pass',
+        host => $service->host(),
+        port => $service->port(),
+        scheme => 'http',
+        url => '/',
+        expandurl => 1,
+    );
+    my $calendarDAVId = $otherCalDAV->NewCalendar({name => 'othercalendar'});
+    $self->assert_not_null($calendarDAVId);
+    $admintalk->setacl('user.other.#calendars.' . $calendarDAVId, "cassandane" => 'lr') or die;
+
+    my $res = $jmap->CallMethods([
+        ['Calendar/get', {
+            accountId => 'other',
+            properties => ['id']
+        }, 'R1'],
+    ]);
+    my $calendarId = $res->[0][1]{list}[0]{id};
+
+    $res = $jmap->CallMethods([
+        ['Calendar/set', {
+            accountId => 'other',
+            update => {
+                $calendarId => {
+                    color => 'green',
+                }
+            },
+        }, 'R1'],
+        ['Calendar/get', {
+            accountId => 'other',
+            ids => [$calendarId],
+            properties => ['color'],
+        }, 'R2'],
+    ]);
+    $self->assert(exists $res->[0][1]{updated}{$calendarId});
+    $self->assert_str_equals('green', $res->[1][1]{list}[0]{color});
+}
+
 sub test_calendar_set_issubscribed_shared
     :min_version_3_1 :needs_component_jmap
 {
