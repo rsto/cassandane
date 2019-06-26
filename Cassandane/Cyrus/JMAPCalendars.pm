@@ -1059,6 +1059,18 @@ sub normalize_event
     if (not exists $event->{alerts}) {
         $event->{alerts} = undef;
     }
+    elsif (defined $event->{alerts}) {
+        foreach my $alert (values %{$event->{alerts}}) {
+            if (not exists $alert->{action}) {
+                $alert->{action} = 'display';
+            }
+            if ($alert->{trigger} and $alert->{trigger}{type} eq 'offset') {
+                if (not exists $alert->{trigger}{relativeTo}) {
+                    $alert->{trigger}{relativeTo} = 'start';
+                }
+            }
+        }
+    }
     if (not exists $event->{useDefaultAlerts}) {
         $event->{useDefaultAlerts} = JSON::false;
     }
@@ -1722,19 +1734,28 @@ sub test_calendarevent_get_alerts
 
     my $alerts = {
         '0CF835D0-CFEB-44AE-904A-C26AB62B73BB-1' => {
-            relativeTo => "before-start",
-            offset => "PT5M",
+            trigger => {
+                type => 'offset',
+                relativeTo => "start",
+                offset => "-PT5M",
+            },
             action => "email",
         },
         '0CF835D0-CFEB-44AE-904A-C26AB62B73BB-2' => {
-            relativeTo => "before-start",
-            offset => "PT5M",
+            trigger => {
+                type => 'offset',
+                relativeTo => "start",
+                offset => "-PT5M",
+            },
             acknowledged => "2016-09-28T14:00:05Z",
             action => "display",
         },
         '0CF835D0-CFEB-44AE-904A-C26AB62B73BB-3' => {
-            relativeTo => "after-start",
-            offset => "PT10M",
+            trigger => {
+                type => 'offset',
+                relativeTo => "start",
+                offset => "PT10M",
+            },
             action => "display",
             snoozed => "2016-09-28T15:00:05Z",
         },
@@ -2891,19 +2912,28 @@ sub test_calendarevent_set_alerts
 
     my $alerts = {
         alert1 => {
-            relativeTo => "before-start",
-            offset => "PT5M",
+            trigger => {
+                type => 'offset',
+                relativeTo => "start",
+                offset => "-PT5M",
+            },
             acknowledged => "2015-11-07T08:57:00Z",
             action => "email",
         },
         alert2 => {
-            relativeTo => "after-start",
-            offset => "PT1H",
+            trigger => {
+                type => 'offset',
+                relativeTo => "start",
+                offset => "PT1H",
+            },
             snoozed => "2015-11-07T10:05:00Z",
             action => "display",
         },
         alert3 => {
-            offset => "PT1S",
+            trigger => {
+                type => 'offset',
+                offset => "PT1S",
+            }
         },
     };
 
@@ -2924,9 +2954,7 @@ sub test_calendarevent_set_alerts
     my $ret = $self->createandget_event($event);
     $event->{id} = $ret->{id};
     $event->{calendarId} = $ret->{calendarId};
-    $event->{alerts}{alert3}{relativeTo} = 'before-start';
-    $event->{alerts}{alert3}{action} = 'display';
-    $self->assert_normalized_event_equals($event, $ret);
+    $self->assert_normalized_event_equals($ret, $event);
 }
 
 sub test_calendarevent_set_participantid
@@ -3280,8 +3308,11 @@ sub test_calendarevent_set_shared
         "participants" => undef,
         "alerts" => {
             'foo' => {
-                relativeTo => "before-start",
-                offset => "PT5M",
+                trigger => {
+                    type => 'offset',
+                    relativeTo => "start",
+                    offset => "-PT5M",
+                },
                 action => "email"
             }
         }
@@ -3304,8 +3335,11 @@ sub test_calendarevent_set_shared
         "participants" => undef,
         "alerts" => {
             'foo' => {
-                relativeTo => "before-start",
-                offset => "PT5M",
+                trigger => {
+                    type => 'offset',
+                    relativeTo => "start",
+                    offset => "-PT5M",
+                },
                 action => "email"
             }
         }
