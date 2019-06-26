@@ -839,9 +839,6 @@ sub normalize_event
         $event->{locations} = undef;
     } elsif (defined $event->{locations}) {
         foreach my $loc (values %{$event->{locations}}) {
-            if (not exists $loc->{name}) {
-                $loc->{name} = ''
-            }
             if (not exists $loc->{description}) {
                 $loc->{description} = undef;
             }
@@ -2205,7 +2202,6 @@ sub test_calendarevent_set_locations
         },
         locD => {
             coordinates => "geo:48.208304,16.371602",
-            name => "",
         },
         locE => {
             name => "location E",
