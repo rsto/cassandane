@@ -971,8 +971,8 @@ sub normalize_event
             if (not exists $loc->{description}) {
                 $loc->{description} = undef;
             }
-            if (not exists $loc->{rel}) {
-                $loc->{rel} = "unknown";
+            if (not exists $loc->{relativeTo}) {
+                $loc->{relativeTo} = "unknown";
             }
             if (not exists $loc->{timeZone}) {
                 $loc->{timeZone} = undef;
@@ -1310,7 +1310,8 @@ sub test_calendarevent_get_endtimezone
     my @locations = values %{$event->{locations}};
     $self->assert_num_equals(1, scalar @locations);
     $self->assert_str_equals("Europe/Vienna", $locations[0]{timeZone});
-    $self->assert_str_equals("end", $locations[0]{rel});
+    $self->assert_str_equals("end", $locations[0]{relativeTo});
+
 }
 
 sub test_calendarevent_get_ms_timezone
@@ -2099,7 +2100,7 @@ sub test_calendarevent_set_endtimezone
     $event->{locations} = {
         "loc1" => {
             "timeZone" => "Europe/Berlin",
-            "rel" => "end",
+            "relativeTo" => "end",
         },
     };
     $ret = $self->updateandget_event({
@@ -2205,7 +2206,7 @@ sub test_calendarevent_set_endtimezone_recurrence
         "locations" => {
             "loc1" => {
                 "timeZone" => "Europe/Berlin",
-                "rel" => "end",
+                "relativeTo" => "end",
             },
         },
         "isAllDay"=> JSON::false,
@@ -5179,7 +5180,7 @@ sub test_rscale_in_jmap_hidden_in_caldav
         "locations" => {
             "loc1" => {
                 "timeZone" => "Europe/Berlin",
-                "rel" => "end",
+                "relativeTo" => "end",
             },
         },
         "isAllDay"=> JSON::false,
