@@ -961,6 +961,9 @@ sub normalize_event
     if (not exists $event->{descriptionContentType}) {
         $event->{descriptionContentType} = 'text/plain';
     }
+    if (not exists $event->{showWithoutTime}) {
+        $event->{showWithoutTime} = JSON::false;
+    }
     if (not exists $event->{locations}) {
         $event->{locations} = undef;
     } elsif (defined $event->{locations}) {
@@ -1173,8 +1176,8 @@ sub test_calendarevent_get_simple
     $self->assert_str_equals("turquoise", $event->{color});
     $self->assert_str_equals("double yo", $event->{description});
     $self->assert_str_equals("text/plain", $event->{descriptionContentType});
-    $self->assert_equals("free", $event->{freeBusyStatus});
-    $self->assert_equals(JSON::false, $event->{isAllDay});
+    $self->assert_equals($event->{freeBusyStatus}, "free");
+    $self->assert_equals($event->{showWithoutTime}, JSON::false);
     $self->assert_str_equals("2016-09-28T16:00:00", $event->{start});
     $self->assert_str_equals("Etc/UTC", $event->{timeZone});
     $self->assert_str_equals("PT1H", $event->{duration});
@@ -1901,7 +1904,7 @@ sub test_calendarevent_set_type
         "duration"=> "PT5M",
         "sequence"=> 42,
         "timeZone"=> "Etc/UTC",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "locale" => "en",
         "status" => "tentative",
         "description"=> "",
@@ -1946,7 +1949,7 @@ sub test_calendarevent_set_simple
         "duration"=> "PT5M",
         "sequence"=> 42,
         "timeZone"=> "Etc/UTC",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "priority" => 9,
         "locale" => "en",
         "color" => "turquoise",
@@ -2122,7 +2125,7 @@ sub test_calendarevent_set_bymonth
                 "description"=> "",
                 "locations"=> undef,
                 "links"=> undef,
-                "isAllDay"=> JSON::false,
+                "showWithoutTime"=> JSON::false,
                 "duration"=> "PT0S",
                 "timeZone"=> undef,
                 "recurrenceOverrides"=> undef,
@@ -2167,7 +2170,7 @@ sub test_calendarevent_set_relatedto
         "duration"=> "PT5M",
         "sequence"=> 42,
         "timeZone"=> "Etc/UTC",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "locale" => "en",
         "status" => "tentative",
         "description"=> "",
@@ -2194,7 +2197,7 @@ sub test_calendarevent_set_prodid
         "start"=> "2015-11-07T09:00:00",
         "duration"=> "PT1H",
         "timeZone" => "Europe/Amsterdam",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "description"=> "",
         "freeBusyStatus"=> "busy",
     };
@@ -2225,7 +2228,7 @@ sub test_calendarevent_set_endtimezone
         "start"=> "2015-11-07T09:00:00",
         "duration"=> "PT1H",
         "timeZone" => "Europe/London",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "description"=> "",
         "freeBusyStatus"=> "busy",
         "prodId" => "foo",
@@ -2268,7 +2271,7 @@ sub test_calendarevent_set_keywords
         "duration"=> "PT5M",
         "sequence"=> 42,
         "timeZone"=> "Etc/UTC",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "locale" => "en",
         "keywords" => {
             'foo' => JSON::true,
@@ -2296,7 +2299,7 @@ sub test_calendarevent_set_keywords_patch
         "duration"=> "PT5M",
         "sequence"=> 42,
         "timeZone"=> "Etc/UTC",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "locale" => "en",
         "keywords" => {
             'foo' => JSON::true,
@@ -2350,7 +2353,7 @@ sub test_calendarevent_set_endtimezone_recurrence
                 "relativeTo" => "end",
             },
         },
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "description"=> "",
         "freeBusyStatus"=> "busy",
         "prodId" => "foo",
@@ -2388,7 +2391,7 @@ sub test_calendarevent_set_htmldescription
         "duration"=> "PT5M",
         "sequence"=> 42,
         "timeZone"=> "Etc/UTC",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "description"=> '<html><body>HTML with special chars : and ; and "</body></html>',
         "descriptionContentType" => 'text/html',
         "privacy" => "secret",
@@ -2415,7 +2418,7 @@ sub test_calendarevent_set_links
         "start"=> "2015-11-07T09:00:00",
         "duration"=> "PT1H",
         "timeZone" => "Europe/Vienna",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "description"=> "",
         "freeBusyStatus"=> "busy",
         "links" => {
@@ -2513,7 +2516,7 @@ sub test_calendarevent_set_locations
         "start"=> "2015-11-07T09:00:00",
         "duration"=> "PT1H",
         "timeZone" => "Europe/London",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "freeBusyStatus"=> "free",
         "locations" => $locations,
         "virtualLocations" => $virtualLocations,
@@ -2557,7 +2560,7 @@ sub test_calendarevent_set_recurrence
         "start"=> "2015-11-07T09:00:00",
         "duration"=> "PT1H",
         "timeZone" => "Europe/London",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "freeBusyStatus"=> "busy",
         "recurrenceRule" => $recurrence,
     };
@@ -2608,7 +2611,7 @@ sub test_calendarevent_set_recurrenceoverrides
         "start"=> "2016-01-01T09:00:00",
         "duration"=> "PT1H",
         "timeZone" => "Europe/London",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "freeBusyStatus"=> "busy",
         "locations" => {
             locA => {
@@ -2677,7 +2680,7 @@ sub test_calendarevent_set_recurrence_until
     my $event = {
         "status" =>"confirmed",
         "calendarId" => $calid,
-        "isAllDay" => JSON::false,
+        "showWithoutTime" => JSON::false,
         "timeZone" => "America/New_York",
         "freeBusyStatus" =>"busy",
         "start" =>"2019-01-12T00:00:00",
@@ -2710,7 +2713,7 @@ sub test_calendarevent_set_recurrence_untilallday
     my $event = {
         "status" =>"confirmed",
         "calendarId" => $calid,
-        "isAllDay" => JSON::true,
+        "showWithoutTime" => JSON::false, # for testing
         "timeZone" =>undef,
         "freeBusyStatus" =>"busy",
         "start" =>"2019-01-12T00:00:00",
@@ -2748,7 +2751,7 @@ sub test_calendarevent_set_recurrence_bymonthday
 		"\@type" => "jsevent",
 		"title" => "Recurrence test",
 		"description" => "",
-		"isAllDay" => JSON::false,
+		"showWithoutTime" => JSON::false,
 		"recurrenceRule" => {
 			"frequency" => "monthly",
 			"byMonthDay" => [
@@ -2777,7 +2780,7 @@ sub test_calendarevent_set_participants
         "start"=> "2015-11-07T09:00:00",
         "duration"=> "PT1H",
         "timeZone" => "Europe/London",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "freeBusyStatus"=> "busy",
         "status" => "confirmed",
         "replyTo" => {
@@ -2918,7 +2921,7 @@ sub test_calendarevent_set_participants_patch
         "start"=> "2015-11-07T09:00:00",
         "duration"=> "PT1H",
         "timeZone" => "Europe/London",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "freeBusyStatus"=> "busy",
         "status" => "confirmed",
         "replyTo" => {
@@ -2992,7 +2995,7 @@ sub test_calendarevent_set_participants_organame
         "start"=> "2015-11-07T09:00:00",
         "duration"=> "PT1H",
         "timeZone" => "Europe/London",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "freeBusyStatus"=> "busy",
         "status" => "confirmed",
         "replyTo" => {
@@ -3067,7 +3070,7 @@ sub test_calendarevent_set_alerts
         "start"=> "2015-11-07T09:00:00",
         "duration"=> "PT2H",
         "timeZone" => "Europe/London",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "freeBusyStatus"=> "busy",
         "status" => "confirmed",
         "alerts" => $alerts,
@@ -3120,7 +3123,7 @@ sub test_calendarevent_set_participantid
         "start"=> "2015-11-07T09:00:00",
         "duration"=> "PT1H",
         "timeZone" => "Europe/London",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "freeBusyStatus"=> "busy",
         "status" => "confirmed",
         "replyTo" => { imip => "mailto:cassandane\@example.com" },
@@ -3155,7 +3158,7 @@ sub test_calendarevent_set_participants_justorga
         "start"=> "2015-11-07T09:00:00",
         "duration"=> "PT1H",
         "timeZone" => "Europe/London",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "freeBusyStatus"=> "busy",
         "status" => "confirmed",
         "replyTo" => {
@@ -3185,61 +3188,6 @@ sub test_calendarevent_set_participants_justorga
     $self->assert_normalized_event_equals($event, $ret);
 }
 
-sub test_calendarevent_set_isallday
-    :min_version_3_1 :needs_component_jmap
-{
-    my ($self) = @_;
-
-    my $jmap = $self->{jmap};
-    my $caldav = $self->{caldav};
-
-    my $event = {
-        "calendarId" => "Default",
-        "title" => "foo",
-        "description" => "foo's description",
-        "freeBusyStatus" => "busy",
-        "isAllDay" => JSON::true,
-    };
-
-    my $res;
-
-    foreach (undef, 'Europe/Vienna') {
-        $event->{timeZone} = $_;
-
-        xlog "create all-day event (with erroneous start)";
-        $event->{start} = "2015-10-06T16:45:00";
-        $res = $jmap->CallMethods([['CalendarEvent/set', {
-            create => { "1" => $event, }
-        }, "R1"]]);
-        $self->assert_str_equals("invalidProperties", $res->[0][1]{notCreated}{"1"}{type});
-
-        xlog "create all-day event (with erroneous duration)";
-        $event->{start} = "2015-10-06T00:00:00";
-        $event->{duration} = "PT15M";
-        $res = $jmap->CallMethods([['CalendarEvent/set', {
-            create => { "1" => $event, }
-        }, "R1"]]);
-        $self->assert_str_equals("invalidProperties", $res->[0][1]{notCreated}{"1"}{type});
-
-    }
-
-    $event->{start} = "2015-10-06T00:00:00";
-    $event->{duration} = "P1D";
-    $event->{timeZone} = "Europe/Vienna";
-    $res = $jmap->CallMethods([['CalendarEvent/set', {
-                    create => { "1" => $event, }
-                }, "R1"]]);
-    $self->assert_str_equals("invalidProperties", $res->[0][1]{notCreated}{"1"}{type});
-
-    $event->{start} = "2015-10-06T00:00:00";
-    $event->{duration} = "P1D";
-    $event->{timeZone} = undef;
-    $res = $jmap->CallMethods([['CalendarEvent/set', {
-                    create => { "1" => $event, }
-                }, "R1"]]);
-    $self->assert_not_null($res->[0][1]{created}{"1"});
-}
-
 sub test_calendarevent_set_created
     :min_version_3_1 :needs_component_jmap
 {
@@ -3255,7 +3203,7 @@ sub test_calendarevent_set_created
         "duration"=> "PT5M",
         "sequence"=> 42,
         "timeZone"=> "Etc/UTC",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
     };
 
     my $ret = $self->createandget_event($event);
@@ -3337,7 +3285,7 @@ sub test_calendarevent_set_move
                             "title" => "foo",
                             "description" => "foo's description",
                             "freeBusyStatus" => "busy",
-                            "isAllDay" => JSON::true,
+                            "showWithoutTime" => JSON::true,
                             "start" => "2015-10-06T00:00:00",
                         }
                     }}, "R1"]]);
@@ -3422,7 +3370,7 @@ sub test_calendarevent_set_shared
         "duration"=> "PT5M",
         "sequence"=> 42,
         "timeZone"=> "Etc/UTC",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "locale" => "en",
         "status" => "tentative",
         "description"=> "",
@@ -3449,7 +3397,7 @@ sub test_calendarevent_set_shared
         "duration"=> "PT5M",
         "sequence"=> 42,
         "timeZone"=> "Etc/UTC",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "locale" => "en",
         "status" => "tentative",
         "description"=> "",
@@ -3627,7 +3575,7 @@ sub test_calendarevent_changes
                             "title" => "1",
                             "description" => "",
                             "freeBusyStatus" => "busy",
-                            "isAllDay" => JSON::true,
+                            "showWithoutTime" => JSON::true,
                             "start" => "2015-10-06T00:00:00",
                         },
                         "2" => {
@@ -3635,7 +3583,7 @@ sub test_calendarevent_changes
                             "title" => "2",
                             "description" => "",
                             "freeBusyStatus" => "busy",
-                            "isAllDay" => JSON::true,
+                            "showWithoutTime" => JSON::true,
                             "start" => "2015-10-06T00:00:00",
                         }
                     }}, "R1"]]);
@@ -3825,7 +3773,7 @@ sub test_calendarevent_query
                             "title" => "foo",
                             "description" => "bar",
                             "freeBusyStatus" => "busy",
-                            "isAllDay" => JSON::false,
+                            "showWithoutTime" => JSON::false,
                             "start" => "2016-07-01T10:00:00",
                             "timeZone" => "Europe/Vienna",
                             "duration" => "PT1H",
@@ -3835,7 +3783,7 @@ sub test_calendarevent_query
                             "title" => "foo",
                             "description" => "",
                             "freeBusyStatus" => "busy",
-                            "isAllDay" => JSON::true,
+                            "showWithoutTime" => JSON::true,
                             "start" => "2016-01-01T00:00:00",
                             "duration" => "P2D",
                             "timeZone" => undef,
@@ -3980,7 +3928,7 @@ sub test_calendarevent_query_shared
                                 "title" => "foo",
                                 "description" => "bar",
                                 "freeBusyStatus" => "busy",
-                                "isAllDay" => JSON::false,
+                                "showWithoutTime" => JSON::false,
                                 "start" => "2016-07-01T10:00:00",
                                 "timeZone" => "Europe/Vienna",
                                 "duration" => "PT1H",
@@ -3990,7 +3938,7 @@ sub test_calendarevent_query_shared
                                 "title" => "foo",
                                 "description" => "",
                                 "freeBusyStatus" => "busy",
-                                "isAllDay" => JSON::true,
+                                "showWithoutTime" => JSON::true,
                                 "start" => "2016-01-01T00:00:00",
                                 "duration" => "P2D",
                             }
@@ -4101,7 +4049,7 @@ sub test_calendarevent_query_datetime
                             "title" => "1",
                             "description" => "",
                             "freeBusyStatus" => "busy",
-                            "isAllDay" => JSON::false,
+                            "showWithoutTime" => JSON::false,
                             "start" => "2016-01-01T09:00:00",
                             "timeZone" => "Europe/Vienna",
                             "duration" => "PT1H",
@@ -4167,7 +4115,7 @@ sub test_calendarevent_query_datetime
                             "title" => "e",
                             "description" => "",
                             "freeBusyStatus" => "busy",
-                            "isAllDay" => JSON::false,
+                            "showWithoutTime" => JSON::false,
                             "start" => "2017-01-01T09:00:00",
                             "timeZone" => "Europe/Vienna",
                             "duration" => "PT1H",
@@ -4209,7 +4157,7 @@ sub test_calendarevent_query_date
                             "title" => "1",
                             "description" => "",
                             "freeBusyStatus" => "busy",
-                            "isAllDay" => JSON::true,
+                            "showWithoutTime" => JSON::true,
                             "start" => "2016-01-01T00:00:00",
                             "duration" => "P3D",
                         },
@@ -4297,7 +4245,7 @@ sub test_calendarevent_query_date
                             "title" => "2",
                             "description" => "",
                             "freeBusyStatus" => "busy",
-                            "isAllDay" => JSON::true,
+                            "showWithoutTime" => JSON::true,
                             "start" => "2017-01-01T00:00:00",
                             "duration" => "P1D",
                             "recurrenceRule" => {
@@ -4343,7 +4291,7 @@ sub test_calendarevent_query_text
                             "start"=> "2016-01-01T09:00:00",
                             "duration"=> "PT1H",
                             "timeZone" => "Europe/London",
-                            "isAllDay"=> JSON::false,
+                            "showWithoutTime"=> JSON::false,
                             "replyTo" => { imip => "mailto:tux\@local" },
                             "participants" => {
                                 "tux" => {
@@ -4453,7 +4401,7 @@ sub test_calendarevent_query_unixepoch
         "title" => "Establish first ARPANET link between UCLA and SRI",
         "description" => "",
         "freeBusyStatus" => "busy",
-        "isAllDay" => JSON::false,
+        "showWithoutTime" => JSON::false,
         "start" => "1969-11-21T17:00:00",
         "timeZone" => "America/Los_Angeles",
         "duration" => "PT1H",
@@ -4504,7 +4452,7 @@ sub test_calendarevent_set_caldav
                             "title" => "foo",
                             "description" => "",
                             "freeBusyStatus" => "busy",
-                            "isAllDay" => JSON::true,
+                            "showWithoutTime" => JSON::true,
                             "start" => "2015-10-06T00:00:00",
                             "duration" => "P1D",
                             "timeZone" => undef,
@@ -4574,7 +4522,7 @@ EOF
                             "title" => "bam",
                             "description" => "",
                             "freeBusyStatus" => "busy",
-                            "isAllDay" => JSON::true,
+                            "showWithoutTime" => JSON::true,
                             "start" => "2015-10-10T00:00:00",
                             "duration" => "P1D",
                             "timeZone" => undef,
@@ -4645,7 +4593,7 @@ sub test_calendarevent_set_schedule_request
                             "title" => "foo",
                             "description" => "foo's description",
                             "freeBusyStatus" => "busy",
-                            "isAllDay" => JSON::false,
+                            "showWithoutTime" => JSON::false,
                             "start" => "2015-10-06T16:45:00",
                             "timeZone" => "Australia/Melbourne",
                             "duration" => "PT1H",
@@ -4698,7 +4646,7 @@ sub test_calendarevent_set_schedule_reply
             "title" => "foo",
             "description" => "foo's description",
             "freeBusyStatus" => "busy",
-            "isAllDay" => JSON::false,
+            "showWithoutTime" => JSON::false,
             "start" => "2015-10-06T16:45:00",
             "timeZone" => "Australia/Melbourne",
             "duration" => "PT1H",
@@ -4754,7 +4702,7 @@ sub test_calendarevent_set_schedule_cancel
                             "title" => "foo",
                             "description" => "foo's description",
                             "freeBusyStatus" => "busy",
-                            "isAllDay" => JSON::false,
+                            "showWithoutTime" => JSON::false,
                             "start" => "2015-10-06T16:45:00",
                             "timeZone" => "Australia/Melbourne",
                             "duration" => "PT15M",
@@ -4814,7 +4762,7 @@ sub test_calendarevent_set_schedule_omit
             "title" => "foo",
             "description" => "foo's description",
             "freeBusyStatus" => "busy",
-            "isAllDay" => JSON::false,
+            "showWithoutTime" => JSON::false,
             "start" => "2015-10-06T16:45:00",
             "timeZone" => "Australia/Melbourne",
             "duration" => "PT1H",
@@ -4873,7 +4821,7 @@ sub test_misc_creationids
             "title" => "bar",
             "description" => "description",
             "freeBusyStatus" => "busy",
-            "isAllDay" => JSON::true,
+            "showWithoutTime" => JSON::true,
             "start" => "2015-10-06T00:00:00",
         }}}, "R2"],
         ['CalendarEvent/get', {ids => ["#e1"]}, "R3"],
@@ -4903,7 +4851,7 @@ sub test_misc_timezone_expansion
         "duration"=> "PT5M",
         "sequence"=> 42,
         "timeZone"=> "Europe/Vienna",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "locale" => "en",
         "status" => "tentative",
         "description"=> "",
@@ -4941,7 +4889,7 @@ sub test_calendarevent_set_uid
         "duration"=> "PT5M",
         "sequence"=> 42,
         "timeZone"=> "Etc/UTC",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "locale" => "en",
         "status" => "tentative",
         "description"=> "",
@@ -5020,7 +4968,7 @@ sub test_calendarevent_copy
         "duration"=> "PT5M",
         "sequence"=> 42,
         "timeZone"=> "Etc/UTC",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "locale" => "en",
         "status" => "tentative",
         "description"=> "",
@@ -5081,7 +5029,7 @@ sub test_calendarevent_set_notitle
         "duration"=> "PT5M",
         "sequence"=> 42,
         "timeZone"=> "Etc/UTC",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "locale" => "en",
     };
 
@@ -5154,7 +5102,7 @@ sub test_calendarevent_set_readonly
                         "duration"=> "PT5M",
                         "sequence"=> 42,
                         "timeZone"=> "Etc/UTC",
-                        "isAllDay"=> JSON::false,
+                        "showWithoutTime"=> JSON::false,
                         "locale" => "en",
                         "status" => "tentative",
                         "description"=> "",
@@ -5230,7 +5178,7 @@ sub test_calendarevent_set_participants_recur
         "start"=> "2015-11-07T09:00:00",
         "duration"=> "PT1H",
         "timeZone" => "Europe/London",
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "recurrenceRule"=> {
             "frequency"=> "weekly",
         },
@@ -5336,7 +5284,7 @@ sub test_rscale_in_jmap_hidden_in_caldav
                 "relativeTo" => "end",
             },
         },
-        "isAllDay"=> JSON::false,
+        "showWithoutTime"=> JSON::false,
         "description"=> "",
         "freeBusyStatus"=> "busy",
         "prodId" => "foo",
