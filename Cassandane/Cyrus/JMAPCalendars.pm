@@ -1047,6 +1047,14 @@ sub normalize_event
     if (not exists $event->{recurrenceOverrides}) {
         $event->{recurrenceOverrides} = undef;
     }
+    else {
+        my $overrides = $event->{recurrenceOverrides};
+        while (my($recurrenceId, $recurrenceOverride) = each %{$overrides}) {
+            if (not exists $recurrenceOverride->{recurrenceId}) {
+                $recurrenceOverride->{recurrenceId} = $recurrenceId;
+            }
+        }
+    }
     if (not exists $event->{alerts}) {
         $event->{alerts} = undef;
     }
@@ -1711,6 +1719,7 @@ sub test_calendarevent_get_recurrenceid_utc
     my $wantRecurrenceOverrides = {
         "2019-02-19T10:00:00" => {
             title => "override",
+            recurrenceId => '2019-02-19T10:00:00',
         },
     };
     $self->assert_deep_equals($wantRecurrenceOverrides, $event->{recurrenceOverrides});
@@ -5225,6 +5234,7 @@ sub test_calendarevent_set_participants_recur
     my $recurrenceOverrides = {
         "2015-11-14T09:00:00" => {
             ('participants/' . $barParticipantId) => undef,
+            'recurrenceId' => "2015-11-14T09:00:00",
         },
     };
 
@@ -5498,6 +5508,7 @@ sub test_calendarevent_set_recurrenceoverrides_mixed_datetypes
             timeZone => "Europe/Vienna",
             duration => "PT1H",
             showWithoutTime => JSON::false,
+            recurrenceId => '2018-05-01T00:00:00',
         }
     };
 
@@ -5535,12 +5546,14 @@ sub test_calendarevent_set_recurrenceoverrides_mixed_datetypes
     $wantOverrides->{'2019-09-01T00:00:00'} = {
         start => "2019-09-02T00:00:00",
         duration => 'P2D',
+        recurrenceId => '2019-09-01T00:00:00'
     };
     $wantOverrides->{'2019-10-01T00:00:00'} = {
         start => "2019-10-02T15:00:00",
         timeZone => "Europe/London",
         duration => "PT2H",
         showWithoutTime => JSON::false,
+        recurrenceId => '2019-10-01T00:00:00',
     };
     $event = $res->[1][1]{list}[0];
     $self->assert_deep_equals($wantOverrides, $event->{recurrenceOverrides});
