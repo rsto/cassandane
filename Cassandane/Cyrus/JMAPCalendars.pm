@@ -1245,7 +1245,7 @@ sub test_calendarevent_get_relatedto
                 'x-unknown1' => JSON::true,
                 'x-unknown2' => JSON::true,
             }},
-            "bar" => { relation => undef},
+            "bar" => { relation => {} },
     }, $event->{relatedTo});
 }
 
@@ -1756,7 +1756,39 @@ sub test_calendarevent_get_alerts
                 offset => "PT10M",
             },
             action => "display",
-            snoozed => "2016-09-28T15:00:05Z",
+        },
+        '0CF835D0-CFEB-44AE-904A-C26AB62B73BB-3-snoozed1' => {
+            trigger => {
+                type => 'absolute',
+                when => '2016-09-28T15:00:05Z',
+            },
+            action => "display",
+            relatedTo => {
+                '0CF835D0-CFEB-44AE-904A-C26AB62B73BB-3' => {
+                    relation => {
+                        parent => JSON::true,
+                    },
+                }
+            },
+        },
+        '0CF835D0-CFEB-44AE-904A-C26AB62B73BB-3-snoozed2' => {
+            trigger => {
+                type => 'absolute',
+                when => '2016-09-28T15:00:05Z',
+            },
+            action => "display",
+            relatedTo => {
+                '0CF835D0-CFEB-44AE-904A-C26AB62B73BB-3' => {
+                    relation => {}
+                },
+            },
+        },
+        '0CF835D0-CFEB-44AE-904A-C26AB62B73BB-4' => {
+            trigger => {
+                type => 'absolute',
+                when => '1976-04-01T00:55:45Z',
+            },
+            action => "display",
         },
     };
 
@@ -2020,7 +2052,6 @@ sub test_calendarevent_set_subseconds
                     offset => "-PT5M0.7S",
                 },
                 acknowledged => "2015-11-07T08:57:00.523Z",
-                snoozed => "2015-11-07T10:05:00.7Z",
                 action => "display",
             },
         },
@@ -2167,7 +2198,7 @@ sub test_calendarevent_set_relatedto
                 'x-unknown1' => JSON::true,
                 'x-unknown2' => JSON::true
             }},
-            "uid4" => { relation => undef },
+            "uid4" => { relation => {} },
         },
         "title"=> "foo",
         "start"=> "2015-11-07T09:00:00",
@@ -3052,12 +3083,17 @@ sub test_calendarevent_set_alerts
         },
         alert2 => {
             trigger => {
-                type => 'offset',
-                relativeTo => "start",
-                offset => "PT1H",
+                type => 'absolute',
+                when => "2019-03-04T04:05:06Z",
             },
-            snoozed => "2015-11-07T10:05:00Z",
             action => "display",
+            relatedTo => {
+                'alert1' => {
+                    relation => {
+                        'parent' => JSON::true,
+                    },
+                },
+            },
         },
         alert3 => {
             trigger => {
@@ -3065,6 +3101,19 @@ sub test_calendarevent_set_alerts
                 offset => "PT1S",
             }
         },
+        alert4 => {
+            trigger => {
+                type => 'absolute',
+                when => "2019-03-04T05:06:07Z",
+            },
+            action => "display",
+            relatedTo => {
+                'alert1' => {
+                    relation => { },
+                },
+            },
+        },
+
     };
 
     my $event =  {
