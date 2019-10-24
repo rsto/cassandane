@@ -6359,4 +6359,45 @@ sub test_calendarevent_set_recurrenceinstances_rdate
     $self->assert_null($res->[1][1]{list}[0]{recurrenceOverrides});
 }
 
+sub test_calendarevent_get_recurrenceinstances_rrule_issue
+    :min_version_3_1 :needs_component_jmap
+{
+    my ($self) = @_;
+
+    my $jmap = $self->{jmap};
+    my $caldav = $self->{caldav};
+
+    my ($id, $ical) = $self->icalfile('rrule_issue');
+
+    my $event = $self->putandget_vevent($id, $ical);
+    $self->assert_not_null($event);
+
+    xlog "Run squatter";
+    $self->{instance}->run_command({cyrus => 1}, 'squatter');
+
+    my $res = $jmap->CallMethods([
+        ['CalendarEvent/query', {
+            filter => {
+                after => '2019-10-29T00:00:00Z',
+                before => '2019-11-29T00:00:00Z'
+            },
+            sort => [{
+                property => 'start',
+                isAscending => JSON::false,
+            }],
+            expandRecurrences => JSON::true,
+        }, 'R1'],
+        ['CalendarEvent/get',
+            {
+                '#ids' => {
+                    'name' => 'CalendarEvent/query',
+                    'path' => '/ids',
+                    'resultOf' => 'R1'
+                }
+            },
+        'R2']
+    ]);
+    $self->assert_num_equals(2, scalar @{$res->[1][1]{list}});
+}
+
 1;
