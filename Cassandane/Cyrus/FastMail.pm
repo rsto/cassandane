@@ -165,6 +165,7 @@ my @default_using = qw(
     urn:ietf:params:jmap:mail
     urn:ietf:params:jmap:submission
     urn:ietf:params:jmap:vacationresponse
+    urn:ietf:params:jmap:calendars
     https://cyrusimap.org/ns/jmap/contacts
     https://cyrusimap.org/ns/jmap/calendars
     https://cyrusimap.org/ns/jmap/mail

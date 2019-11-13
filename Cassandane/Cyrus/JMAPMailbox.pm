@@ -396,6 +396,7 @@ sub test_mailbox_get_nocalendars
     my $using = [
         'urn:ietf:params:jmap:core',
         'urn:ietf:params:jmap:mail',
+        'urn:ietf:params:jmap:calendars',
         'https://cyrusimap.org/ns/jmap/calendars',
     ];
 
