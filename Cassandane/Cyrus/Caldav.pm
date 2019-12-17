@@ -4299,4 +4299,49 @@ EOF
                           $response->{headers}->{'cache-control'});
 }
 
+sub test_attachment_add
+    :needs_component_httpd
+{
+    my ($self) = @_;
+
+    my $CalDAV = $self->{caldav};
+
+    my $CalendarId = $CalDAV->NewCalendar({name => 'foo'});
+    $self->assert_not_null($CalendarId);
+
+    my $href = "$CalendarId/event1.ics";
+    my $card = <<EOF;
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Apple Inc.//Mac OS X 10.10.4//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+CREATED:20150806T234327Z
+DTEND:20160831T183000Z
+TRANSP:OPAQUE
+SUMMARY:An Event
+UID:event1
+DTSTART:20160831T153000Z
+DTSTAMP:20150806T234327Z
+SEQUENCE:0
+END:VEVENT
+END:VCALENDAR
+EOF
+    $CalDAV->Request('PUT', $href, $card, 'Content-Type' => 'text/calendar');
+
+    my $RawRequest = {
+        headers => {
+            'Content-Type' => 'application/octet-stream',
+            'Content-Disposition' => 'attachment;filename=test',
+            'Prefer' => 'return=representation',
+            'Authorization' => $CalDAV->auth_header(),
+        },
+        content => 'davattach',
+    };
+    my $URI = $CalDAV->request_url($href) . '?action=attachment-add';
+    my $RawResponse = $CalDAV->ua->post($URI, $RawRequest);
+    warn "CalDAV " . Dumper($RawRequest, $RawResponse);
+    $self->assert_str_equals('200', $RawResponse->{status});
+}
+
 1;
