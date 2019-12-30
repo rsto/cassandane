@@ -640,6 +640,7 @@ sub _jmap_setup
     require Net::CalDAVTalk;
     require Net::CardDAVTalk;
 
+
     my $service = $self->{instance}->get_service("http");
     $ENV{DEBUGJMAP} = 1;
     eval {
