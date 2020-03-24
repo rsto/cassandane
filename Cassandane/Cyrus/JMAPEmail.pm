@@ -16828,6 +16828,7 @@ sub test_email_set_guidsearch_updated_internaldate
         'urn:ietf:params:jmap:core',
         'urn:ietf:params:jmap:mail',
         'urn:ietf:params:jmap:submission',
+        'urn:ietf:params:jmap:calendars',
         'https://cyrusimap.org/ns/jmap/mail',
         'https://cyrusimap.org/ns/jmap/quota',
         'https://cyrusimap.org/ns/jmap/debug',
