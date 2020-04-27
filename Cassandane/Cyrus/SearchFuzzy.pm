@@ -750,7 +750,7 @@ sub test_noindex_multipartheaders
     $self->assert_num_equals(1, scalar @$r);
 }
 
-sub test_xattachmentname
+sub test_attachmentname
     :needs_search_xapian
 {
     my ($self) = @_;
@@ -783,12 +783,12 @@ sub test_xattachmentname
     my $r;
 
     $r = $talk->search(
-        "fuzzy", "xattachmentname", { Quote => "stuff" }
+        "fuzzy", "attachmentname", { Quote => "stuff" }
     ) || die;
     $self->assert_num_equals(1, scalar @$r);
 
     $r = $talk->search(
-        "fuzzy", "xattachmentname", { Quote => "nope" }
+        "fuzzy", "attachmentname", { Quote => "nope" }
     ) || die;
     $self->assert_num_equals(0, scalar @$r);
 
@@ -798,7 +798,7 @@ sub test_xattachmentname
     $self->assert_num_equals(1, scalar @$r);
 
     $r = $talk->search(
-        "fuzzy", "xattachmentname", { Quote => "blah" },
+        "fuzzy", "attachmentname", { Quote => "blah" },
     ) || die;
     $self->assert_num_equals(1, scalar @$r);
 }
