@@ -1424,7 +1424,7 @@ sub stop
     $self->_compress_berkeley_crud();
     $self->_check_valgrind_logs();
     $self->_check_cores();
-    $self->_check_syslog();
+    $self->_check_syslog() if not $self->{ignore_syslog};
 }
 
 sub cleanup
