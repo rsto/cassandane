@@ -7165,7 +7165,7 @@ sub test_calendarevent_get_utcstart
         ['CalendarEvent/set', {
             create => {
                 1 => {
-                    uid => 'eventuid1@local',
+                    uid => 'eventuid1',
                     calendarId => 'Default',
                     title => "event1",
                     start => "2019-12-06T11:21:01.8",
@@ -7203,7 +7203,7 @@ sub test_calendarevent_get_utcstart
     # Assert utcStart for regular recurrence instance.
     $res = $jmap->CallMethods([
         ['CalendarEvent/get', {
-            ids => ['eventuid1@local;2019-12-08T11:21:01.8'],
+            ids => ['eventuid1;2019-12-08T11:21:01.8'],
             properties => ['utcStart', 'utcEnd'],
         }, 'R2']
     ]);
@@ -7218,7 +7218,7 @@ sub test_calendarevent_get_utcstart
         ['CalendarEvent/set', {
             create => {
                 2 => {
-                    uid => 'eventuid2@local',
+                    uid => 'eventuid2',
                     calendarId => 'Default',
                     title => "event2",
                     start => "2019-12-08T23:30:00",
@@ -7295,7 +7295,7 @@ EOF
         ['CalendarEvent/set', {
             create => {
                 1 => {
-                    uid => 'eventuid1@local',
+                    uid => 'eventuid1',
                     calendarId => 'Default',
                     title => "event1",
                     start => "2019-11-30T23:30:00",
@@ -7354,7 +7354,7 @@ sub test_calendarevent_set_utcstart
         ['CalendarEvent/set', {
             create => {
                 1 => {
-                    uid => 'eventuid1@local',
+                    uid => 'eventuid1',
                     calendarId => 'Default',
                     title => "event1",
                     utcStart => "2019-12-10T23:30:00Z",
@@ -7362,7 +7362,7 @@ sub test_calendarevent_set_utcstart
                     timeZone => "Australia/Melbourne",
                 },
                 2 => {
-                    uid => 'eventuid2@local',
+                    uid => 'eventuid2',
                     calendarId => 'Default',
                     title => "event2",
                     utcStart => "2019-12-10T23:30:00Z",
@@ -7452,7 +7452,7 @@ sub test_calendarevent_set_utcstart_recur
         ['CalendarEvent/set', {
             create => {
                 1 => {
-                    uid => 'eventuid1@local',
+                    uid => 'eventuid1',
                     calendarId => 'Default',
                     title => "event1",
                     utcStart => "2019-12-10T23:30:00Z",
@@ -7640,7 +7640,7 @@ sub test_calendarevent_set_peruser
         ['CalendarEvent/set', {
             create => {
                 1 => {
-                    uid => 'eventuid1@local',
+                    uid => 'eventuid1',
                     calendarId => 'Default',
                     title => "event1",
                     start => "2019-12-10T23:30:00",
@@ -7859,7 +7859,7 @@ sub test_calendarevent_set_linkblobid
         ['CalendarEvent/set', {
             create => {
                 1 => {
-                    uid => 'eventuid1@local',
+                    uid => 'eventuid1',
                     calendarId => 'Default',
                     title => "event1",
                     start => "2019-12-10T23:30:00",
@@ -8140,7 +8140,7 @@ sub test_calendarevent_set_defaultalerts
         ['CalendarEvent/set', {
             create => {
                 1 => {
-                    uid => 'eventuid1@local',
+                    uid => 'eventuid1',
                     calendarId => 'Default',
                     title => "event1",
                     start => "2020-01-19T11:00:00",
@@ -8149,7 +8149,7 @@ sub test_calendarevent_set_defaultalerts
                     useDefaultAlerts => JSON::true,
                 },
                 2 => {
-                    uid => 'eventuid2@local',
+                    uid => 'eventuid2',
                     calendarId => 'Default',
                     title => "event2",
                     start => "2020-01-19T00:00:00",
@@ -8203,7 +8203,7 @@ sub test_calendarevent_set_defaultalerts_etag
         ['CalendarEvent/set', {
             create => {
                 1 => {
-                    uid => 'eventuid1@local',
+                    uid => 'eventuid1',
                     calendarId => 'Default',
                     title => "event1",
                     start => "2020-01-19T11:00:00",
@@ -8212,7 +8212,7 @@ sub test_calendarevent_set_defaultalerts_etag
                     useDefaultAlerts => JSON::true,
                 },
                 2 => {
-                    uid => 'eventuid2@local',
+                    uid => 'eventuid2',
                     calendarId => 'Default',
                     title => "event1",
                     start => "2020-01-21T11:00:00",
@@ -8336,7 +8336,7 @@ sub test_calendarevent_set_defaultalerts_etag_shared
         ['CalendarEvent/set', {
             create => {
                 1 => {
-                    uid => 'eventuid1@local',
+                    uid => 'eventuid1',
                     calendarId => 'Default',
                     title => "eventCass",
                     start => "2020-01-19T11:00:00",
@@ -8479,7 +8479,7 @@ sub test_calendarevent_set_defaultalerts_description
         ['CalendarEvent/set', {
             create => {
                 1 => {
-                    uid => 'eventuid1@local',
+                    uid => 'eventuid1',
                     calendarId => 'Default',
                     title => "event1",
                     start => "2020-01-19T11:00:00",
@@ -8532,7 +8532,7 @@ sub test_calendar_defaultalerts_synctoken
         ['CalendarEvent/set', {
             create => {
                 1 => {
-                    uid => 'eventuid1@local',
+                    uid => 'eventuid1',
                     calendarId => 'Default',
                     title => "event1",
                     start => "2020-01-19T11:00:00",
@@ -8548,7 +8548,7 @@ sub test_calendar_defaultalerts_synctoken
                     },
                 },
                 2 => {
-                    uid => 'eventuid2@local',
+                    uid => 'eventuid2',
                     calendarId => 'Default',
                     title => "event2",
                     start => "2020-01-21T13:00:00",
@@ -8651,7 +8651,7 @@ sub test_calendar_defaultalerts_synctoken_shared
         ['CalendarEvent/set', {
             create => {
                 1 => {
-                    uid => 'eventuid1@local',
+                    uid => 'eventuid1',
                     calendarId => 'Default',
                     title => "event1",
                     start => "2020-01-19T11:00:00",
@@ -8667,7 +8667,7 @@ sub test_calendar_defaultalerts_synctoken_shared
                     },
                 },
                 2 => {
-                    uid => 'eventuid2@local',
+                    uid => 'eventuid2',
                     calendarId => 'Default',
                     title => "event2",
                     start => "2020-01-21T13:00:00",
@@ -8770,7 +8770,7 @@ sub test_calendar_set_destroy_events
         ['CalendarEvent/set', {
             create => {
                 2 => {
-                    uid => 'eventuid1@local',
+                    uid => 'eventuid1',
                     calendarId => '#1',
                     title => "event1",
                     start => "2020-03-30T11:00:00",
@@ -8824,7 +8824,7 @@ sub test_calendarevent_get_recurrenceoverrides_before_after
             create => {
                 "1" => {
                     calendarId => 'Default',
-                    uid => 'event1uid@local',
+                    uid => 'event1uid',
                     title => "event1",
                     start => "2020-01-01T09:00:00",
                     timeZone => "Europe/Vienna",
@@ -9024,7 +9024,7 @@ sub test_calendarevent_get_reducepartitipants
             create => {
                 event1 => {
                     calendarId => 'Default',
-                    uid => 'event1uid@local',
+                    uid => 'event1uid',
                     title => "event1",
                     start => "2020-01-01T09:00:00",
                     timeZone => "Europe/Vienna",
@@ -9130,7 +9130,7 @@ sub test_calendarevent_set_schedulingmessages
             create => {
                 event1 => {
                     calendarId => 'Default',
-                    uid => 'event1uid@local',
+                    uid => 'event1uid',
                     title => "event1",
                     start => "2020-01-01T09:00:00",
                     timeZone => "Europe/Vienna",
