@@ -8924,7 +8924,7 @@ sub test_calendar_set_participantidentities
 
     # JMAP Calendars spec defines participantIdentities to be server-set,
     # which means it can be only set with its current value. But we allow
-    # setting it to a new value, if the calendars extension is used.
+    # setting it to a new value if the calendars extension is used.
 
     my $using = [
         'urn:ietf:params:jmap:core',
