@@ -1015,16 +1015,17 @@ sub test_calendar_set_destroyspecials
 
     xlog $self, "destroy special calendars";
     my $res = $jmap->CallMethods([
-            ['Calendar/set', { destroy => @specialIds }, "R1"]
+            ['Calendar/set', { create => { 1 => { name => 'foo' } } }, 'R1'], # picked as new default
+            ['Calendar/set', { destroy => @specialIds }, "R2"]
     ]);
     $self->assert_not_null($res);
 
-    $self->assert_str_equals("Default", $res->[0][1]{destroyed}[0]);
-    my $errType = $res->[0][1]{notDestroyed}{"Inbox"}{type};
+    $self->assert_str_equals("Default", $res->[1][1]{destroyed}[0]);
+    my $errType = $res->[1][1]{notDestroyed}{"Inbox"}{type};
     $self->assert_str_equals("notFound", $errType);
-    $errType = $res->[0][1]{notDestroyed}{"Outbox"}{type};
+    $errType = $res->[1][1]{notDestroyed}{"Outbox"}{type};
     $self->assert_str_equals("notFound", $errType);
-    $errType = $res->[0][1]{notDestroyed}{"Attachments"}{type};
+    $errType = $res->[1][1]{notDestroyed}{"Attachments"}{type};
     $self->assert_str_equals("notFound", $errType);
 }
 
