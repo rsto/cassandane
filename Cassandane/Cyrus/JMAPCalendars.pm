@@ -1132,23 +1132,25 @@ sub normalize_event
     if (not exists $event->{replyTo}) {
         $event->{replyTo} = undef;
     }
-    if (not exists $event->{recurrenceRule}) {
-        $event->{recurrenceRule} = undef;
-    } elsif (defined $event->{recurrenceRule}) {
-        if (not exists $event->{recurrenceRule}{interval}) {
-            $event->{recurrenceRule}{interval} = 1;
-        }
-        if (not exists $event->{recurrenceRule}{firstDayOfWeek}) {
-            $event->{recurrenceRule}{firstDayOfWeek} = 'mo';
-        }
-        if (not exists $event->{recurrenceRule}{rscale}) {
-            $event->{recurrenceRule}{rscale} = 'gregorian';
-        }
-        if (not exists $event->{recurrenceRule}{skip}) {
-            $event->{recurrenceRule}{skip} = 'omit';
-        }
-        if (not exists $event->{recurrenceRule}{q{@type}}) {
-            $event->{recurrenceRule}{q{@type}} = 'RecurrenceRule';
+    if (not exists $event->{recurrenceRules}) {
+        $event->{recurrenceRules} = undef;
+    } elsif (defined $event->{recurrenceRules}) {
+        foreach my $rrule (@{$event->{recurrenceRules}}) {
+            if (not exists $rrule->{interval}) {
+                $rrule->{interval} = 1;
+            }
+            if (not exists $rrule->{firstDayOfWeek}) {
+                $rrule->{firstDayOfWeek} = 'mo';
+            }
+            if (not exists $rrule->{rscale}) {
+                $rrule->{rscale} = 'gregorian';
+            }
+            if (not exists $rrule->{skip}) {
+                $rrule->{skip} = 'omit';
+            }
+            if (not exists $rrule->{q{@type}}) {
+                $rrule->{q{@type}} = 'RecurrenceRule';
+            }
         }
     }
     if (not exists $event->{recurrenceOverrides}) {
@@ -1424,11 +1426,11 @@ sub test_calendarevent_get_rscale
     my $event = $self->putandget_vevent($id, $ical);
     $self->assert_not_null($event);
     $self->assert_str_equals("Some day in Adar I", $event->{title});
-    $self->assert_str_equals("yearly", $event->{recurrenceRule}{frequency});
-    $self->assert_str_equals("hebrew", $event->{recurrenceRule}{rscale});
-    $self->assert_str_equals("forward", $event->{recurrenceRule}{skip});
-    $self->assert_num_equals(8, $event->{recurrenceRule}{byMonthDay}[0]);
-    $self->assert_str_equals("5L", $event->{recurrenceRule}{byMonth}[0]);
+    $self->assert_str_equals("yearly", $event->{recurrenceRules}[0]{frequency});
+    $self->assert_str_equals("hebrew", $event->{recurrenceRules}[0]{rscale});
+    $self->assert_str_equals("forward", $event->{recurrenceRules}[0]{skip});
+    $self->assert_num_equals(8, $event->{recurrenceRules}[0]{byMonthDay}[0]);
+    $self->assert_str_equals("5L", $event->{recurrenceRules}[0]{byMonth}[0]);
 }
 
 sub test_calendarevent_get_endtimezone
@@ -1751,10 +1753,10 @@ sub test_calendarevent_get_recurrence
     my ($id, $ical) = $self->icalfile('recurrence');
 
     my $event = $self->putandget_vevent($id, $ical);
-    $self->assert_not_null($event->{recurrenceRule});
-    $self->assert_str_equals("RecurrenceRule", $event->{recurrenceRule}{q{@type}});
-    $self->assert_str_equals("monthly", $event->{recurrenceRule}{frequency});
-    $self->assert_str_equals("gregorian", $event->{recurrenceRule}{rscale});
+    $self->assert_not_null($event->{recurrenceRules}[0]);
+    $self->assert_str_equals("RecurrenceRule", $event->{recurrenceRules}[0]{q{@type}});
+    $self->assert_str_equals("monthly", $event->{recurrenceRules}[0]{frequency});
+    $self->assert_str_equals("gregorian", $event->{recurrenceRules}[0]{rscale});
     # This assertion is a bit brittle. It depends on the libical-internal
     # sort order for BYDAY
     $self->assert_deep_equals([{
@@ -1774,7 +1776,7 @@ sub test_calendarevent_get_recurrence
             }, {
                 "day" => "su",
                 "nthOfPeriod" => -3,
-            }], $event->{recurrenceRule}{byDay});
+            }], $event->{recurrenceRules}[0]{byDay});
 }
 
 sub test_calendarevent_get_rdate_period
@@ -2128,11 +2130,11 @@ sub test_calendarevent_set_subseconds
         updated => "2019-06-29T11:58:12.412Z",
         duration=> "PT5M3.45S",
         timeZone=> "Europe/Vienna",
-        recurrenceRule => {
+        recurrenceRules => [{
             '@type' => 'RecurrenceRule',
             frequency => "daily",
             until => '2011-12-10T04:05:06.78',
-        },
+        }],
         "replyTo" => {
             "imip" => 'mailto:foo@local',
         },
@@ -2190,8 +2192,8 @@ sub test_calendarevent_set_subseconds
 
     # Known regresion: recurrenceRule.until
     $self->assert_str_equals('2011-12-10T04:05:06',
-        $ret->{recurrenceRule}{until});
-    $ret->{recurrenceRule}{until} = '2011-12-10T04:05:06.78';
+        $ret->{recurrenceRules}[0]{until});
+    $ret->{recurrenceRules}[0]{until} = '2011-12-10T04:05:06.78';
 
     # Known regression: participant.scheduleUpdated
     $self->assert_str_equals('2018-07-06T05:03:02Z',
@@ -2260,14 +2262,14 @@ sub test_calendarevent_set_bymonth
         my $event =  {
                 "calendarId"=> $calid,
                 "start"=> "2010-02-12T00:00:00",
-                "recurrenceRule"=> {
+                "recurrenceRules"=> [{
                         "frequency"=> "monthly",
                         "interval"=> 13,
                         "byMonth"=> [
                                 "4L"
                         ],
                         "count"=> 3,
-                },
+                }],
                 "\@type"=> "jsevent",
                 "title"=> "",
                 "description"=> "",
@@ -2504,10 +2506,10 @@ sub test_calendarevent_set_endtimezone_recurrence
         "description"=> "",
         "freeBusyStatus"=> "busy",
         "prodId" => "foo",
-        "recurrenceRule" => {
+        "recurrenceRules" => [{
             "frequency" => "monthly",
             count => 12,
-        },
+        }],
         "recurrenceOverrides" => {
             "2015-12-07T09:00:00" => {
                 "locations/loc1/timeZone" => "America/New_York",
@@ -2687,7 +2689,7 @@ sub test_calendarevent_set_recurrence
     my $jmap = $self->{jmap};
     my $calid = "Default";
 
-    my $recurrence = {
+    my $recurrenceRules = [{
         frequency => "monthly",
         interval => 2,
         firstDayOfWeek => "su",
@@ -2698,7 +2700,7 @@ sub test_calendarevent_set_recurrence
             }, {
                 day => "sa",
         }],
-    };
+    }];
 
     my $event =  {
         "calendarId" => $calid,
@@ -2709,7 +2711,7 @@ sub test_calendarevent_set_recurrence
         "timeZone" => "Europe/London",
         "showWithoutTime"=> JSON::false,
         "freeBusyStatus"=> "busy",
-        "recurrenceRule" => $recurrence,
+        "recurrenceRules" => $recurrenceRules,
     };
 
     my $ret = $self->createandget_event($event);
@@ -2722,7 +2724,7 @@ sub test_calendarevent_set_recurrence
         ['CalendarEvent/set',{
             update => {
                 $event->{id} => {
-                    recurrenceRule => undef,
+                    recurrenceRules => undef,
                 },
             },
         }, "R1"],
@@ -2732,8 +2734,38 @@ sub test_calendarevent_set_recurrence
     ]);
     $self->assert(exists $res->[0][1]{updated}{$event->{id}});
 
-    delete $event->{recurrenceRule};
+    delete $event->{recurrenceRules};
     $ret = $res->[1][1]{list}[0];
+    $self->assert_normalized_event_equals($event, $ret);
+}
+
+sub test_calendarevent_set_recurrence_multivalued
+    :min_version_3_1 :needs_component_jmap
+{
+    my ($self) = @_;
+    my $jmap = $self->{jmap};
+
+    my $event =  {
+        calendarId => 'Default',
+        title => "title",
+        description => "description",
+        start => "2015-11-07T09:00:00",
+        duration => "PT1H",
+        timeZone => "Europe/London",
+        showWithoutTime => JSON::false,
+        freeBusyStatus => "busy",
+        recurrenceRules => [{
+            frequency => 'weekly',
+            count => 3,
+        }, {
+            frequency => 'daily',
+            count => 4,
+        }],
+    };
+
+    my $ret = $self->createandget_event($event);
+    $event->{id} = $ret->{id};
+    $event->{calendarId} = $ret->{calendarId};
     $self->assert_normalized_event_equals($event, $ret);
 }
 
@@ -2746,10 +2778,10 @@ sub test_calendarevent_set_recurrenceoverrides
     my $jmap = $self->{jmap};
     my $calid = "Default";
 
-    my $recurrence = {
+    my $recurrenceRules = [{
         frequency => "monthly",
         count => 12,
-    };
+    }];
 
     my $event =  {
         "calendarId" => $calid,
@@ -2779,7 +2811,7 @@ sub test_calendarevent_set_recurrenceoverrides
                 rel => 'enclosure',
             },
         },
-        "recurrenceRule" => $recurrence,
+        "recurrenceRules" => $recurrenceRules,
         "recurrenceOverrides" => {
             "2016-02-01T09:00:00" => { excluded => JSON::true },
             "2016-02-03T09:00:00" => {},
@@ -2835,17 +2867,17 @@ sub test_calendarevent_set_recurrence_until
         "uid" =>"76f46024-7284-4701-b93f-d9cd812f3f43",
         "title" =>"timed event with non-zero time until",
         "\@type" =>"jsevent",
-        "recurrenceRule" =>{
+        "recurrenceRules" => [{
             "frequency" =>"weekly",
             "until" =>"2019-04-20T23:59:59"
-        },
+        }],
         "description" =>"",
         "duration" =>"P1D"
     };
 
     my $ret = $self->createandget_event($event);
     $event->{id} = $ret->{id};
-    $event->{recurrenceRule}->{until} = '2019-04-20T23:59:59';
+    $event->{recurrenceRules}[0]{until} = '2019-04-20T23:59:59';
     $self->assert_normalized_event_equals($event, $ret);
 }
 
@@ -2868,10 +2900,10 @@ sub test_calendarevent_set_recurrence_untilallday
         "uid" =>"76f46024-7284-4701-b93f-d9cd812f3f43",
         "title" =>"allday event with non-zero time until",
         "\@type" =>"jsevent",
-        "recurrenceRule" =>{
+        "recurrenceRules" => [{
             "frequency" =>"weekly",
             "until" =>"2019-04-20T23:59:59"
-        },
+        }],
         "description" =>"",
         "duration" =>"P1D"
     };
@@ -2899,12 +2931,12 @@ sub test_calendarevent_set_recurrence_bymonthday
 		"title" => "Recurrence test",
 		"description" => "",
 		"showWithoutTime" => JSON::false,
-		"recurrenceRule" => {
+		"recurrenceRules" => [{
 			"frequency" => "monthly",
 			"byMonthDay" => [
 				-1
 			]
-		},
+		}],
 	};
 
     my $ret = $self->createandget_event($event);
@@ -2932,9 +2964,9 @@ sub test_calendarevent_set_recurrence_patch
                     "timeZone" => "Europe/London",
                     "showWithoutTime"=> JSON::false,
                     "freeBusyStatus"=> "busy",
-                    "recurrenceRule" => {
+                    "recurrenceRules" => [{
                         frequency => 'monthly',
-                    },
+                    }],
                     "recurrenceOverrides" => {
                         '2019-02-01T09:00:00' => {
                             duration => 'PT2H',
@@ -4425,9 +4457,9 @@ sub test_calendarevent_query_datetime
                             "start" => "2017-01-01T09:00:00",
                             "timeZone" => "Europe/Vienna",
                             "duration" => "PT1H",
-                            "recurrenceRule" => {
+                            "recurrenceRules" => [{
                                 "frequency" => "yearly",
-                            },
+                            }],
                         },
                     }}, "R1"]]);
     # Assert both events are found
@@ -4554,9 +4586,9 @@ sub test_calendarevent_query_date
                             "showWithoutTime" => JSON::true,
                             "start" => "2017-01-01T00:00:00",
                             "duration" => "P1D",
-                            "recurrenceRule" => {
+                            "recurrenceRules" => [{
                                 "frequency" => "yearly",
-                            },
+                            }],
                         },
                     }}, "R1"]]);
     # Assert both events are found
@@ -4620,10 +4652,10 @@ sub test_calendarevent_query_text
                                     },
                                 },
                             },
-                            recurrenceRule => {
+                            recurrenceRules => [{
                                 frequency => "monthly",
                                 count => 12,
-                            },
+                            }],
                             "recurrenceOverrides" => {
                                 "2016-04-01T10:00:00" => {
                                     "description" => "blah",
@@ -5411,9 +5443,9 @@ sub test_misc_timezone_expansion
         "privacy" => "secret",
         "participants" => undef,
         "alerts"=> undef,
-        "recurrenceRule" => {
+        "recurrenceRules" => [{
             frequency => "weekly",
-        },
+        }],
     };
 
     my $ret = $self->createandget_event($event);
@@ -5777,9 +5809,9 @@ sub test_calendarevent_set_participants_recur
         "duration"=> "PT1H",
         "timeZone" => "Europe/London",
         "showWithoutTime"=> JSON::false,
-        "recurrenceRule"=> {
+        "recurrenceRules"=> [{
             "frequency"=> "weekly",
-        },
+        }],
         "replyTo" => {
             "imip" => "mailto:foo\@local",
         },
@@ -5886,10 +5918,10 @@ sub test_rscale_in_jmap_hidden_in_caldav
         "description"=> "",
         "freeBusyStatus"=> "busy",
         "prodId" => "foo",
-        "recurrenceRule" => {
+        "recurrenceRules" => [{
             "frequency" => "monthly",
             count => 12,
-        },
+        }],
     };
 
     my $ret = $self->createandget_event($event);
@@ -5916,7 +5948,7 @@ sub test_rscale_in_jmap_hidden_in_caldav
     $self->assert_not_null($ret);
 
     # rscale should now be in jmap
-    $self->assert_deep_equals(
+    $self->assert_deep_equals([
         {
             '@type' => 'RecurrenceRule',
             count          => 12,
@@ -5925,10 +5957,11 @@ sub test_rscale_in_jmap_hidden_in_caldav
             interval       => 1,
             rscale         => 'gregorian',
             skip           => 'omit'
-        },
-        $ret->{recurrenceRule},
+        }],
+        $ret->{recurrenceRules},
     );
 
+    # FIXME Net-CalDAV talk needs to update
     # Make sure we have no rscale through caldav, most clients can't
     # handle it
     my $events = $caldav->GetEvents("$calid");
@@ -5937,7 +5970,7 @@ sub test_rscale_in_jmap_hidden_in_caldav
             count => 12,
             frequency => 'monthly',
         },
-        $events->[0]->{recurrenceRule},
+        $events->[0]->{recurrenceRules},
     );
 }
 
@@ -6070,10 +6103,14 @@ sub test_calendarevent_query_expandrecurrences
                     start => "2019-01-01T09:00:00.123",
                     timeZone => "Europe/Vienna",
                     duration => "PT1H",
-                    recurrenceRule => {
+                    recurrenceRules => [{
                         frequency => 'weekly',
                         count => 3,
-                    },
+                    }, {
+                        frequency => 'hourly',
+                        byHour => [9, 14, 22],
+                        count => 2,
+                    }],
                     recurrenceOverrides => {
                         '2019-01-08T09:00:00.123' => {
                             start => '2019-01-08T12:00:00.456',
@@ -6112,12 +6149,13 @@ sub test_calendarevent_query_expandrecurrences
             expandRecurrences => JSON::true,
         }, 'R1']
     ]);
-    $self->assert_num_equals(5, $res->[0][1]{total});
+    $self->assert_num_equals(6, $res->[0][1]{total});
     $self->assert_deep_equals([
             'event1uid;2019-01-15T09:00:00.123',
             'event1uid;2019-01-08T09:00:00.123',
             'event1uid;2019-01-03T13:00:00.789',
             'event2uid',
+            'event1uid;2019-01-01T14:00:00.123',
             'event1uid;2019-01-01T09:00:00.123',
     ], $res->[0][1]{ids});
 }
@@ -6144,10 +6182,13 @@ sub test_calendarevent_get_recurrenceinstances
                     start => "2019-01-01T09:00:00",
                     timeZone => "Europe/Vienna",
                     duration => "PT1H",
-                    recurrenceRule => {
+                    recurrenceRules => [{
                         frequency => 'weekly',
                         count => 5,
-                    },
+                    }, {
+                        frequency => 'daily',
+                        count => 2,
+                    }],
                     recurrenceOverrides => {
                         '2019-01-15T09:00:00' => {
                             title => 'override1',
@@ -6175,12 +6216,12 @@ sub test_calendarevent_get_recurrenceinstances
                     'event1uid;2019-01-10T12:00:00',
                     'event1uid;2019-01-22T09:00:00', # is excluded
                     'event1uid;2019-12-01T09:00:00', # does not exist
-
+                    'event1uid;2019-01-02T09:00:00', # from second rrule
                 ],
                 properties => ['start', 'title', 'recurrenceId'],
         }, 'R1'],
     ]);
-    $self->assert_num_equals(3, scalar @{$res->[0][1]{list}});
+    $self->assert_num_equals(4, scalar @{$res->[0][1]{list}});
 
     $self->assert_str_equals('event1uid;2019-01-08T09:00:00', $res->[0][1]{list}[0]{id});
     $self->assert_str_equals('2019-01-08T09:00:00', $res->[0][1]{list}[0]{start});
@@ -6194,6 +6235,10 @@ sub test_calendarevent_get_recurrenceinstances
     $self->assert_str_equals('event1uid;2019-01-10T12:00:00', $res->[0][1]{list}[2]{id});
     $self->assert_str_equals('2019-01-10T12:00:00', $res->[0][1]{list}[2]{start});
     $self->assert_str_equals('2019-01-10T12:00:00', $res->[0][1]{list}[2]{recurrenceId});
+
+    $self->assert_str_equals('event1uid;2019-01-02T09:00:00', $res->[0][1]{list}[3]{id});
+    $self->assert_str_equals('2019-01-02T09:00:00', $res->[0][1]{list}[3]{start});
+    $self->assert_str_equals('2019-01-02T09:00:00', $res->[0][1]{list}[3]{recurrenceId});
 
     $self->assert_num_equals(2, scalar @{$res->[0][1]{notFound}});
     $self->assert_str_equals('event1uid;2019-01-22T09:00:00', $res->[0][1]{notFound}[0]);
@@ -6222,10 +6267,10 @@ sub test_calendarevent_set_recurrenceinstances
                     start => "2019-01-01T09:00:00",
                     timeZone => "Europe/Vienna",
                     duration => "PT1H",
-                    recurrenceRule => {
+                    recurrenceRules => [{
                         frequency => 'weekly',
                         count => 5,
-                    },
+                    }],
                 },
             }
         }, 'R1']
@@ -6374,10 +6419,10 @@ sub test_calendarevent_set_recurrenceinstances_rdate
                     start => "2019-01-01T09:00:00",
                     timeZone => "Europe/Vienna",
                     duration => "PT1H",
-                    recurrenceRule => {
+                    recurrenceRules => [{
                         frequency => 'weekly',
                         count => 5,
-                    },
+                    }],
                     recurrenceOverrides => {
                         '2019-01-10T14:00:00' => {}
                     },
@@ -6773,9 +6818,9 @@ sub test_crasher20191227
                     "duration"=> "PT2H",
                     "timeZone" => "Europe/London",
                     "showWithoutTime"=> JSON::false,
-                    recurrenceRule => {
+                    recurrenceRules => [{
                         frequency => 'weekly',
-                    },
+                    }],
                     recurrenceOverrides => {
                         '2015-11-14T09:00:00' => {
                             title => 'foo',
@@ -7171,10 +7216,10 @@ sub test_calendarevent_get_utcstart
                     start => "2019-12-06T11:21:01.8",
                     duration => "PT5M0.3S",
                     timeZone => "Europe/Vienna",
-                    recurrenceRule => {
+                    recurrenceRules => [{
                         frequency => 'daily',
                         count => 3,
-                    },
+                    }],
                     recurrenceOverrides => {
                         '2019-12-07T11:21:01.8' => {
                             start => '2019-12-07T13:00:00',
@@ -7458,10 +7503,10 @@ sub test_calendarevent_set_utcstart_recur
                     utcStart => "2019-12-10T23:30:00Z",
                     duration => "PT1H",
                     timeZone => "Australia/Melbourne",
-                    recurrenceRule => {
+                    recurrenceRules => [{
                         frequency => 'daily',
                         count => 5,
-                    },
+                    }],
                 },
             },
         }, 'R1'],
@@ -7646,10 +7691,10 @@ sub test_calendarevent_set_peruser
                     start => "2019-12-10T23:30:00",
                     duration => "PT1H",
                     timeZone => "Australia/Melbourne",
-                    recurrenceRule => {
+                    recurrenceRules => [{
                         frequency => 'daily',
                         count => 5,
-                    },
+                    }],
                 },
             },
         }, 'R1'],
@@ -8829,9 +8874,9 @@ sub test_calendarevent_get_recurrenceoverrides_before_after
                     start => "2020-01-01T09:00:00",
                     timeZone => "Europe/Vienna",
                     duration => "PT1H",
-                    recurrenceRule => {
+                    recurrenceRules => [{
                         frequency => 'daily',
-                    },
+                    }],
                     recurrenceOverrides => {
                         '2020-01-02T09:00:00' => {
                             title => 'override1',
