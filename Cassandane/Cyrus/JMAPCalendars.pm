@@ -10133,4 +10133,142 @@ sub test_calendarprincipal_getavailability_merged
     }], $res->[1][1]{list});
 }
 
+sub test_calendarevent_set_replyto
+    :min_version_3_3 :needs_component_jmap
+{
+    my ($self) = @_;
+    my $jmap = $self->{jmap};
+
+    my $res = $jmap->CallMethods([
+        ['CalendarEvent/set', {
+            create => {
+                withreplyto => {
+                    title => 'withreplyto',
+                    replyTo => {
+                        imip => 'mailto:replyto@local',
+                    },
+                    participants => {
+                        owner => {
+                            '@type' => 'Participant',
+                            roles => {
+                                owner => JSON::true,
+                                attendee => JSON::true,
+                            },
+                            email => 'email@local',
+                            sendTo => {
+                                imip => 'mailto:sendto@local',
+                            },
+                        },
+                        attendee => {
+                            '@type' => 'Participant',
+                            roles => {
+                                attendee => JSON::true,
+                            },
+                            sendTo => {
+                                imip => 'mailto:attendee@local',
+                            },
+                        },
+                    },
+                    calendarId => 'Default',
+                    start => "2011-01-01T04:05:06",
+                },
+                withsendto => {
+                    title => 'withsendto',
+                    participants => {
+                        owner => {
+                            '@type' => 'Participant',
+                            roles => {
+                                owner => JSON::true,
+                                attendee => JSON::true,
+                            },
+                            email => 'email@local',
+                            sendTo => {
+                                imip => 'mailto:sendto@local',
+                            },
+                        },
+                        attendee => {
+                            '@type' => 'Participant',
+                            roles => {
+                                attendee => JSON::true,
+                            },
+                            sendTo => {
+                                imip => 'mailto:attendee@local',
+                            },
+                        },
+                    },
+                    calendarId => 'Default',
+                    start => "2011-01-01T04:05:06",
+                },
+                withemail => {
+                    title => 'withemail',
+                    participants => {
+                        owner => {
+                            '@type' => 'Participant',
+                            roles => {
+                                owner => JSON::true,
+                                attendee => JSON::true,
+                            },
+                            email => 'email@local',
+                        },
+                        attendee => {
+                            '@type' => 'Participant',
+                            roles => {
+                                attendee => JSON::true,
+                            },
+                            sendTo => {
+                                imip => 'mailto:attendee@local',
+                            },
+                        },
+                    },
+                    calendarId => 'Default',
+                    start => "2011-01-01T04:05:06",
+                },
+                onlyreplyto => {
+                    title => 'onlyreplyto',
+                    replyTo => {
+                        imip => 'imip:replyto@local',
+                    },
+                    calendarId => 'Default',
+                    start => "2011-01-01T04:05:06",
+                },
+                noowner => {
+                    title => 'noowner',
+                    participants => {
+                        attendee => {
+                            '@type' => 'Participant',
+                            roles => {
+                                attendee => JSON::true,
+                            },
+                            sendTo => {
+                                imip => 'mailto:attendee@local',
+                            },
+                        },
+                    },
+                    calendarId => 'Default',
+                    start => "2011-01-01T04:05:06",
+                },
+            },
+        }, 'R1'],
+        ['CalendarEvent/get', {
+            ids => [
+                '#withreplyto',
+                '#withsendto',
+                '#withemail',
+            ],
+            properties => ['replyTo', 'title'],
+        }, 'R2'],
+    ]);
+    $self->assert_deep_equals(['participants'],
+        $res->[0][1]{notCreated}{onlyreplyto}{properties});
+    $self->assert_deep_equals(['replyTo'],
+        $res->[0][1]{notCreated}{noowner}{properties});
+
+    my %replyTo = map { $_->{title} => $_->{replyTo} } @{$res->[1][1]{list}};
+    $self->assert_deep_equals({
+        withreplyto => { imip => 'mailto:replyto@local' },
+        withsendto => { imip => 'mailto:sendto@local' },
+        withemail => { imip => 'mailto:email@local' },
+    }, \%replyTo);
+}
+
 1;
