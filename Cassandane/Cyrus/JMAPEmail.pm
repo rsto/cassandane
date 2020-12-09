@@ -19861,4 +19861,106 @@ sub test_email_parse_embedded_toplevel
     $self->assert_str_equals($blobId, $res->[0][1]{parsed}{$blobId}{blobId});
 }
 
+sub test_searchsnippet_get_attachments
+    :min_version_3_3 :needs_component_jmap :SearchAttachmentExtractor :JMAPExtensions
+{
+    my ($self) = @_;
+    my $jmap = $self->{jmap};
+    my $imap = $self->{store}->get_client();
+    my $instance = $self->{instance};
+
+    my $uri = URI->new($instance->{config}->get('search_attachment_extractor_url'));
+
+    # Start a dummy extractor server.
+    my $handler = sub {
+        my ($conn, $req) = @_;
+        if ($req->method eq 'HEAD') {
+            my $res = HTTP::Response->new(204);
+            $res->content("");
+            $conn->send_response($res);
+        } else {
+            my $res = HTTP::Response->new(200);
+            $res->header("Keep-Alive" => "timeout=1");  # Force client timeout
+            $res->content("attachmentbody");
+            $conn->send_response($res);
+        }
+    };
+    $instance->start_httpd($handler, $uri->port());
+
+    my $rawMessage = <<'EOF';
+From: <from@local>
+To: to@local
+Reply-To: replyto@local
+Subject: test
+Date: Mon, 13 Apr 2020 15:34:03 +0200
+MIME-Version: 1.0
+Content-Type: multipart/mixed;
+ boundary=6c3338934661485f87537c19b5f9d933
+
+--6c3338934661485f87537c19b5f9d933
+Content-Type: text/plain
+
+textbody
+
+--6c3338934661485f87537c19b5f9d933
+Content-Type: application/jpg
+Content-Disposition: attachment; filename="November.txt"
+Content-Transfer-Encoding: base64
+
+ZGF0YQ==
+
+--6c3338934661485f87537c19b5f9d933
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="December.txt"
+Content-Transfer-Encoding: base64
+
+ZGF0YQ==
+
+--6c3338934661485f87537c19b5f9d933--
+EOF
+    $rawMessage =~ s/\r?\n/\r\n/gs;
+    $imap->append('INBOX', $rawMessage) || die $@;
+
+    xlog $self, "run squatter";
+    $self->{instance}->run_command({cyrus => 1}, 'squatter');
+
+    my $using = [
+        'urn:ietf:params:jmap:core',
+        'urn:ietf:params:jmap:mail',
+        'https://cyrusimap.org/ns/jmap/mail',
+    ];
+
+    my $res = $jmap->CallMethods([
+        ['Email/query', {
+            filter => {
+                text => 'December',
+            },
+            findMatchingParts => JSON::true,
+        }, 'R1'],
+        ['SearchSnippet/get', {
+            '#emailIds' => {
+                resultOf => 'R1',
+                name => 'Email/query',
+                path => '/ids',
+            },
+            '#partIds' => {
+                resultOf => 'R1',
+                name => 'Email/query',
+                path => '/partIds',
+            },
+            '#filter' => {
+                resultOf => 'R1',
+                name => 'Email/query',
+                path => '/filter',
+            },
+        }, 'R2'],
+    ], $using);
+
+    $self->assert_num_equals(1, scalar @{$res->[1][1]{list}});
+    my $snippet = $res->[1][1]{list}[0];
+    $self->assert_num_equals(1, scalar keys %{$snippet->{attachments}});
+    $self->assert_str_equals('<mark>December</mark>.txt', $snippet->{attachments}{3}{name});
+}
+
+
 1;
