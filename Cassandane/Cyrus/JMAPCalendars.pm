@@ -1294,6 +1294,10 @@ sub normalize_event
         $event->{isDraft} = JSON::false;
     }
 
+    if (not exists $event->{calendarIds}) {
+        $event->{calendarIds} = undef;
+    }
+
     # undefine dynamically generated values
     $event->{created} = undef;
     $event->{updated} = undef;
@@ -1405,12 +1409,12 @@ sub test_calendarevent_get_properties
 
     my ($id, $ical) = $self->icalfile('simple');
 
-    my $event = $self->putandget_vevent($id, $ical, ["x-href", "calendarId"]);
+    my $event = $self->putandget_vevent($id, $ical, ["x-href", "calendarIds"]);
     $self->assert_not_null($event);
     $self->assert_not_null($event->{id});
     $self->assert_not_null($event->{uid});
     $self->assert_not_null($event->{"x-href"});
-    $self->assert_not_null($event->{calendarId});
+    $self->assert_not_null($event->{calendarIds});
     $self->assert_num_equals(5, scalar keys %$event);
 }
 
@@ -1796,7 +1800,9 @@ sub test_calendarevent_organizer_noattendees
         ['CalendarEvent/set', {
             create => {
                 event2 => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        'Default' => JSON::true,
+                    },
                     title => "title",
                     "start"=> "2015-11-07T09:00:00",
                     "duration"=> "PT2H",
@@ -1881,7 +1887,9 @@ sub test_calendarevent_attendee_noorganizer
         ['CalendarEvent/set', {
             create => {
                 1 => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        'Default' => JSON::true,
+                    },
                     title => "title",
                     "start"=> "2015-11-07T09:00:00",
                     "duration"=> "PT2H",
@@ -2287,7 +2295,9 @@ sub test_calendarevent_set_type
     my $jmap = $self->{jmap};
     my $calid = "Default";
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "uid" => "58ADE31-custom-UID",
         "title"=> "foo",
         "start"=> "2015-11-07T09:00:00",
@@ -2332,7 +2342,9 @@ sub test_calendarevent_set_simple
     my $jmap = $self->{jmap};
     my $calid = "Default";
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "uid" => "58ADE31-custom-UID",
         "title"=> "foo",
         "start"=> "2015-11-07T09:00:00",
@@ -2364,7 +2376,9 @@ sub test_calendarevent_set_subseconds
     my $jmap = $self->{jmap};
     my $calid = "Default";
     my $event =  {
-        calendarId => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         uid => "58ADE31-custom-UID",
         title => "subseconds",
         start => "2011-12-04T04:05:06.78",
@@ -2502,7 +2516,9 @@ sub test_calendarevent_set_bymonth
         my $calid = "Default";
 
         my $event =  {
-                "calendarId"=> $calid,
+                calendarIds => {
+                    $calid => JSON::true,
+                },
                 "start"=> "2010-02-12T00:00:00",
                 "recurrenceRules"=> [{
                         "frequency"=> "monthly",
@@ -2541,7 +2557,9 @@ sub test_calendarevent_set_relatedto
     my $jmap = $self->{jmap};
     my $calid = "Default";
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "uid" => "58ADE31-custom-UID",
         "relatedTo" => {
             "uid1" => { relation => {
@@ -2583,7 +2601,9 @@ sub test_calendarevent_set_prodid
     my $jmap = $self->{jmap};
     my $calid = "Default";
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "title"=> "foo",
         "start"=> "2015-11-07T09:00:00",
         "duration"=> "PT1H",
@@ -2614,7 +2634,9 @@ sub test_calendarevent_set_endtimezone
     my $jmap = $self->{jmap};
     my $calid = "Default";
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "title"=> "foo",
         "start"=> "2015-11-07T09:00:00",
         "duration"=> "PT1H",
@@ -2629,7 +2651,7 @@ sub test_calendarevent_set_endtimezone
 
     $ret = $self->createandget_event($event);
     $event->{id} = $ret->{id};
-    $event->{calendarId} = $ret->{calendarId};
+    $event->{calendarIds} = $ret->{calendarIds};
     $self->assert_normalized_event_equals($event, $ret);
 
     $event->{locations} = {
@@ -2640,7 +2662,7 @@ sub test_calendarevent_set_endtimezone
     };
     $ret = $self->updateandget_event({
             id => $event->{id},
-            calendarId => $event->{calendarId},
+            calendarIds => $event->{calendarIds},
             locations => $event->{locations},
     });
 
@@ -2655,7 +2677,9 @@ sub test_calendarevent_set_keywords
     my $jmap = $self->{jmap};
     my $calid = "Default";
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "uid" => "58ADE31-custom-UID",
         "title"=> "foo",
         "start"=> "2015-11-07T09:00:00",
@@ -2683,7 +2707,9 @@ sub test_calendarevent_set_keywords_patch
     my $jmap = $self->{jmap};
     my $calid = "Default";
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "uid" => "58ADE31-custom-UID",
         "title"=> "foo",
         "start"=> "2015-11-07T09:00:00",
@@ -2733,7 +2759,9 @@ sub test_calendarevent_set_endtimezone_recurrence
     my $jmap = $self->{jmap};
     my $calid = "Default";
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "title"=> "foo",
         "start"=> "2015-11-07T09:00:00",
         "duration"=> "PT1H",
@@ -2763,7 +2791,7 @@ sub test_calendarevent_set_endtimezone_recurrence
 
     $ret = $self->createandget_event($event);
     $event->{id} = $ret->{id};
-    $event->{calendarId} = $ret->{calendarId};
+    $event->{calendarIds} = $ret->{calendarIds};
     $self->assert_normalized_event_equals($event, $ret);
 }
 
@@ -2775,7 +2803,9 @@ sub test_calendarevent_set_htmldescription
     my $jmap = $self->{jmap};
     my $calid = "Default";
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "uid" => "58ADE31-custom-UID",
         "title"=> "foo",
         "start"=> "2015-11-07T09:00:00",
@@ -2804,7 +2834,9 @@ sub test_calendarevent_set_links
     my $jmap = $self->{jmap};
     my $calid = "Default";
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "title"=> "foo",
         "start"=> "2015-11-07T09:00:00",
         "duration"=> "PT1H",
@@ -2839,7 +2871,7 @@ sub test_calendarevent_set_links
 
     $ret = $self->createandget_event($event);
     $event->{id} = $ret->{id};
-    $event->{calendarId} = $ret->{calendarId};
+    $event->{calendarIds} = $ret->{calendarIds};
     $self->assert_normalized_event_equals($event, $ret);
 }
 
@@ -2901,7 +2933,9 @@ sub test_calendarevent_set_locations
     };
 
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "title"=> "title",
         "description"=> "description",
         "start"=> "2015-11-07T09:00:00",
@@ -2919,7 +2953,7 @@ sub test_calendarevent_set_locations
 
     my $ret = $self->createandget_event($event);
     $event->{id} = $ret->{id};
-    $event->{calendarId} = $ret->{calendarId};
+    $event->{calendarIds} = $ret->{calendarIds};
     $self->assert_normalized_event_equals($event, $ret);
 }
 
@@ -2945,7 +2979,9 @@ sub test_calendarevent_set_recurrence
     }];
 
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "title"=> "title",
         "description"=> "description",
         "start"=> "2015-11-07T09:00:00",
@@ -2958,7 +2994,7 @@ sub test_calendarevent_set_recurrence
 
     my $ret = $self->createandget_event($event);
     $event->{id} = $ret->{id};
-    $event->{calendarId} = $ret->{calendarId};
+    $event->{calendarIds} = $ret->{calendarIds};
     $self->assert_normalized_event_equals($event, $ret);
 
     # Now delete the recurrence rule
@@ -2988,7 +3024,9 @@ sub test_calendarevent_set_recurrence_multivalued
     my $jmap = $self->{jmap};
 
     my $event =  {
-        calendarId => 'Default',
+        calendarIds => {
+            Default => JSON::true,
+        },
         title => "title",
         description => "description",
         start => "2015-11-07T09:00:00",
@@ -3007,7 +3045,7 @@ sub test_calendarevent_set_recurrence_multivalued
 
     my $ret = $self->createandget_event($event);
     $event->{id} = $ret->{id};
-    $event->{calendarId} = $ret->{calendarId};
+    $event->{calendarIds} = $ret->{calendarIds};
     $self->assert_normalized_event_equals($event, $ret);
 }
 
@@ -3018,7 +3056,9 @@ sub test_calendarevent_set_exrule
     my $jmap = $self->{jmap};
 
     my $event =  {
-        calendarId => 'Default',
+        calendarIds => {
+            Default => JSON::true,
+        },
         title => "title",
         description => "description",
         start => "2020-12-03T09:00:00",
@@ -3037,7 +3077,7 @@ sub test_calendarevent_set_exrule
 
     my $ret = $self->createandget_event($event);
     $event->{id} = $ret->{id};
-    $event->{calendarId} = $ret->{calendarId};
+    $event->{calendarIds} = $ret->{calendarIds};
     $self->assert_normalized_event_equals($event, $ret);
 }
 
@@ -3055,7 +3095,9 @@ sub test_calendarevent_set_recurrenceoverrides
     }];
 
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "title"=> "title",
         "description"=> "description",
         "start"=> "2016-01-01T09:00:00",
@@ -3103,16 +3145,15 @@ sub test_calendarevent_set_recurrenceoverrides
         },
     };
 
-
     my $ret = $self->createandget_event($event);
     $event->{id} = $ret->{id};
-    $event->{calendarId} = $ret->{calendarId};
+    $event->{calendarIds} = $ret->{calendarIds};
     delete $event->{recurrenceOverrides}{"2016-07-01T09:00:00"}; # ignore patch with 'uid'
     $self->assert_normalized_event_equals($event, $ret);
 
     $ret = $self->updateandget_event({
             id => $event->{id},
-            calendarId => $event->{calendarId},
+            calendarIds => $event->{calendarIds},
             title => "updated title",
     });
     $event->{title} = "updated title";
@@ -3129,7 +3170,9 @@ sub test_calendarevent_set_recurrence_until
 
     my $event = {
         "status" =>"confirmed",
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "showWithoutTime" => JSON::false,
         "timeZone" => "America/New_York",
         "freeBusyStatus" =>"busy",
@@ -3162,7 +3205,9 @@ sub test_calendarevent_set_recurrence_untilallday
 
     my $event = {
         "status" =>"confirmed",
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "showWithoutTime" => JSON::false, # for testing
         "timeZone" =>undef,
         "freeBusyStatus" =>"busy",
@@ -3194,7 +3239,9 @@ sub test_calendarevent_set_recurrence_bymonthday
 
 	my $event =  {
 		"uid" => "90c2697e-acbc-4508-9e72-6b8828e8d9f3",
-		"calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
 		"start" => "2019-01-31T09:00:00",
 		"duration" => "PT1H",
 		"timeZone" => "Australia/Melbourne",
@@ -3227,7 +3274,9 @@ sub test_calendarevent_set_recurrence_patch
         ['CalendarEvent/set', {
             create =>  {
                 1 => {
-                    "calendarId" => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     "title"=> "title",
                     "description"=> "description",
                     "start"=> "2019-01-01T09:00:00",
@@ -3280,7 +3329,9 @@ sub test_calendarevent_set_participants
     my $calid = "Default";
 
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "title"=> "title",
         "description"=> "description",
         "start"=> "2015-11-07T09:00:00",
@@ -3418,7 +3469,9 @@ sub test_calendarevent_set_participants_patch
     my $calid = "Default";
 
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "title"=> "title",
         "description"=> "description",
         "start"=> "2015-11-07T09:00:00",
@@ -3488,7 +3541,9 @@ sub test_calendarevent_set_participants_organame
     my $calid = "Default";
 
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "title"=> "title",
         "description"=> "description",
         "start"=> "2015-11-07T09:00:00",
@@ -3584,7 +3639,9 @@ sub test_calendarevent_set_alerts
     };
 
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "title"=> "title",
         "description"=> "description",
         "start"=> "2015-11-07T09:00:00",
@@ -3599,7 +3656,7 @@ sub test_calendarevent_set_alerts
 
     my $ret = $self->createandget_event($event);
     $event->{id} = $ret->{id};
-    $event->{calendarId} = $ret->{calendarId};
+    $event->{calendarIds} = $ret->{calendarIds};
     $self->assert_normalized_event_equals($ret, $event);
 }
 
@@ -3613,7 +3670,9 @@ sub test_calendarevent_set_alerts_description
         ['CalendarEvent/set', {
             create => {
                 1 =>  {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => 'title',
                     description => 'description',
                     start => '2015-11-07T09:00:00',
@@ -3629,7 +3688,9 @@ sub test_calendarevent_set_alerts_description
                     },
                 },
                 2 =>  {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     description => 'description',
                     start => '2016-11-07T09:00:00',
                     alerts =>  {
@@ -3644,7 +3705,9 @@ sub test_calendarevent_set_alerts_description
                     },
                 },
                 3 =>  {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     start => '2017-11-07T09:00:00',
                     alerts =>  {
                         alert1 => {
@@ -3712,7 +3775,9 @@ sub test_calendarevent_set_participantid
     };
 
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "title"=> "title",
         "description"=> "description",
         "start"=> "2015-11-07T09:00:00",
@@ -3727,7 +3792,7 @@ sub test_calendarevent_set_participantid
 
     my $ret = $self->createandget_event($event);
     $event->{id} = $ret->{id};
-    $event->{calendarId} = $ret->{calendarId};
+    $event->{calendarIds} = $ret->{calendarIds};
 
     $self->assert_normalized_event_equals($event, $ret);
 
@@ -3745,7 +3810,9 @@ sub test_calendarevent_set_participants_justorga
     my $calid = "Default";
 
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "title"=> "title",
         "description"=> "description",
         "start"=> "2015-11-07T09:00:00",
@@ -3788,7 +3855,9 @@ sub test_calendarevent_set_created
     my $jmap = $self->{jmap};
     my $calid = "Default";
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "uid" => "58ADE31-custom-UID",
         "title"=> "foo",
         "start"=> "2015-11-07T09:00:00",
@@ -3873,7 +3942,9 @@ sub test_calendarevent_set_move
     xlog $self, "create event in calendar $calidA";
     $res = $jmap->CallMethods([['CalendarEvent/set', { create => {
                         "1" => {
-                            "calendarId" => $calidA,
+                            calendarIds => {
+                                $calidA => JSON::true,
+                            },
                             "title" => "foo",
                             "description" => "foo's description",
                             "freeBusyStatus" => "busy",
@@ -3888,13 +3959,15 @@ sub test_calendarevent_set_move
     $res = $jmap->CallMethods([['CalendarEvent/get', {ids => [$id]}, "R1"]]);
     my $event = $res->[0][1]{list}[0];
     $self->assert_str_equals($id, $event->{id});
-    $self->assert_str_equals($calidA, $event->{calendarId});
+    $self->assert_deep_equals({$calidA => JSON::true}, $event->{calendarIds});
     $self->assert_str_equals($state, $res->[0][1]{state});
 
     xlog $self, "move event to unknown calendar";
     $res = $jmap->CallMethods([['CalendarEvent/set', { update => {
                         $id => {
-                            "calendarId" => "nope",
+                            calendarIds => {
+                                nope => JSON::true,
+                            },
                         }
                     }}, "R1"]]);
     $self->assert_str_equals('invalidProperties', $res->[0][1]{notUpdated}{$id}{type});
@@ -3904,12 +3977,14 @@ sub test_calendarevent_set_move
     $res = $jmap->CallMethods([['CalendarEvent/get', {ids => [$id]}, "R1"]]);
     $event = $res->[0][1]{list}[0];
     $self->assert_str_equals($id, $event->{id});
-    $self->assert_str_equals($calidA, $event->{calendarId});
+    $self->assert_deep_equals({$calidA => JSON::true}, $event->{calendarIds});
 
     xlog $self, "move event to calendar $calidB";
     $res = $jmap->CallMethods([['CalendarEvent/set', { update => {
                         $id => {
-                            "calendarId" => $calidB,
+                            calendarIds => {
+                                $calidB => JSON::true,
+                            },
                         }
                     }}, "R1"]]);
     $self->assert_str_not_equals($state, $res->[0][1]{newState});
@@ -3919,7 +3994,7 @@ sub test_calendarevent_set_move
     $res = $jmap->CallMethods([['CalendarEvent/get', {ids => [$id]}, "R1"]]);
     $event = $res->[0][1]{list}[0];
     $self->assert_str_equals($id, $event->{id});
-    $self->assert_str_equals($calidB, $event->{calendarId});
+    $self->assert_deep_equals({$calidB => JSON::true}, $event->{calendarIds});
 }
 
 sub test_calendarevent_set_shared
@@ -3955,7 +4030,9 @@ sub test_calendarevent_set_shared
     $admintalk->setacl("user.manifold.#calendars.$CalendarId1", "cassandane" => 'lr') or die;
 
     my $event =  {
-        "calendarId" => $CalendarId1,
+        calendarIds => {
+            $CalendarId1 => JSON::true,
+        },
         "uid" => "58ADE31-custom-UID",
         "title"=> "foo",
         "start"=> "2015-11-07T09:00:00",
@@ -3983,7 +4060,9 @@ sub test_calendarevent_set_shared
     };
 
     my $event2 =  {
-        "calendarId" => $CalendarId1,
+        calendarIds => {
+            $CalendarId1 => JSON::true,
+        },
         "uid" => "58ADE31-custom-UID",
         "title"=> "foo2",
         "start"=> "2015-11-07T09:00:00",
@@ -4040,7 +4119,9 @@ sub test_calendarevent_set_shared
                     accountId => 'manifold',
                     update => {
                         $id => {
-                            "calendarId" => $CalendarId1,
+                            calendarIds => {
+                                $CalendarId1 => JSON::true,
+                            },
                             "title" => "foo2",
                         },
     }}, "R1"]]);
@@ -4062,7 +4143,9 @@ sub test_calendarevent_set_shared
                     accountId => 'manifold',
                     update => {
                         $id => {
-                            "calendarId" => $CalendarId1,
+                            calendarIds => {
+                                $CalendarId1 => JSON::true,
+                            },
                             "title" => "1(updated)",
                         },
     }}, "R1"]]);
@@ -4096,7 +4179,9 @@ sub test_calendarevent_set_shared
                     accountId => 'manifold',
                     update => {
                         $id => {
-                            "calendarId" => $CalendarId2,
+                            calendarIds => {
+                                $CalendarId2 => JSON::true,
+                            },
                             "title" => "1(updated)",
                         },
     }}, "R1"]]);
@@ -4110,7 +4195,9 @@ sub test_calendarevent_set_shared
                     accountId => 'manifold',
                     update => {
                         $id => {
-                            "calendarId" => $CalendarId2,
+                            calendarIds => {
+                                $CalendarId2 => JSON::true,
+                            },
                             "title" => "1(updated)",
                         },
     }}, "R1"]]);
@@ -4164,7 +4251,9 @@ sub test_calendarevent_changes
     xlog $self, "create event #1 in calendar $calidA and event #2 in calendar $calidB";
     $res = $jmap->CallMethods([['CalendarEvent/set', { create => {
                         "1" => {
-                            "calendarId" => $calidA,
+                            calendarIds => {
+                                $calidA => JSON::true,
+                            },
                             "title" => "1",
                             "description" => "",
                             "freeBusyStatus" => "busy",
@@ -4172,7 +4261,9 @@ sub test_calendarevent_changes
                             "start" => "2015-10-06T00:00:00",
                         },
                         "2" => {
-                            "calendarId" => $calidB,
+                            calendarIds => {
+                                $calidB => JSON::true,
+                            },
                             "title" => "2",
                             "description" => "",
                             "freeBusyStatus" => "busy",
@@ -4206,11 +4297,15 @@ sub test_calendarevent_changes
     xlog $self, "update event #1 and #2";
     $res = $jmap->CallMethods([['CalendarEvent/set', { update => {
                         $id1 => {
-                            "calendarId" => $calidA,
+                            calendarIds => {
+                                $calidA => JSON::true,
+                            },
                             "title" => "1(updated)",
                         },
                         $id2 => {
-                            "calendarId" => $calidB,
+                            calendarIds => {
+                                $calidB => JSON::true,
+                            },
                             "title" => "2(updated)",
                         }
                     }}, "R1"]]);
@@ -4243,7 +4338,9 @@ sub test_calendarevent_changes
     $res = $jmap->CallMethods([['CalendarEvent/set', {
                     update => {
                         $id1 => {
-                            "calendarId" => $calidA,
+                            calendarIds => {
+                                $calidA => JSON::true,
+                            },
                             "title" => "1(updated)",
                             "description" => "",
                         },
@@ -4279,7 +4376,9 @@ sub test_calendarevent_changes
     $res = $jmap->CallMethods([['CalendarEvent/set', {
                     update => {
                         $id1 => {
-                            "calendarId" => $calidB,
+                            calendarIds => {
+                                $calidB => JSON::true,
+                            },
                         },
                     }
                 }, "R1"]]);
@@ -4300,7 +4399,9 @@ sub test_calendarevent_changes
     $res = $jmap->CallMethods([['CalendarEvent/set', {
                     update => {
                         $id1 => {
-                            "calendarId" => $calidB,
+                            calendarIds => {
+                                $calidB => JSON::true,
+                            },
                             "title" => "1(goodbye)",
                         },
                     },
@@ -4368,7 +4469,9 @@ sub test_calendarevent_query
     $res = $jmap->CallMethods([['CalendarEvent/set', {
                     create => {
                         "1" => {
-                            "calendarId" => $calidA,
+                            calendarIds => {
+                                $calidA => JSON::true,
+                            },
                             "title" => "foo",
                             "description" => "bar",
                             "freeBusyStatus" => "busy",
@@ -4378,7 +4481,9 @@ sub test_calendarevent_query
                             "duration" => "PT1H",
                         },
                         "2" => {
-                            "calendarId" => $calidB,
+                            calendarIds => {
+                                $calidB => JSON::true,
+                            },
                             "title" => "foo",
                             "description" => "",
                             "freeBusyStatus" => "busy",
@@ -4485,16 +4590,16 @@ sub test_calendarevent_query_deleted_calendar
 
     xlog $self, "create calendars A and B";
     my $res = $jmap->CallMethods([
-            ['Calendar/set', {
-                    create => {
-                        "1" => {
-                            name => "A", color => "coral", sortOrder => 1, isVisible => JSON::true,
-                        },
-                        "2" => {
-                            name => "B", color => "blue", sortOrder => 1, isVisible => JSON::true
-                        }
-                    }}, "R1"]
-        ]);
+        ['Calendar/set', {
+            create => {
+                "1" => {
+                    name => "A",
+                },
+                "2" => {
+                    name => "B",
+                }
+        }}, "R1"]
+    ]);
     my $calidA = $res->[0][1]{created}{"1"}{id};
     my $calidB = $res->[0][1]{created}{"2"}{id};
     my $state = $res->[0][1]{newState};
@@ -4503,7 +4608,9 @@ sub test_calendarevent_query_deleted_calendar
     $res = $jmap->CallMethods([['CalendarEvent/set', {
                     create => {
                         "1" => {
-                            "calendarId" => $calidA,
+                            "calendarIds" => {
+                                $calidA => JSON::true,
+                            },
                             "title" => "foo",
                             "description" => "bar",
                             "freeBusyStatus" => "busy",
@@ -4513,7 +4620,9 @@ sub test_calendarevent_query_deleted_calendar
                             "duration" => "PT1H",
                         },
                         "2" => {
-                            "calendarId" => $calidB,
+                            "calendarIds" => {
+                                $calidB => JSON::true,
+                            },
                             "title" => "foo",
                             "description" => "",
                             "freeBusyStatus" => "busy",
@@ -4609,7 +4718,9 @@ sub test_calendarevent_query_shared
                         accountId => $account,
                         create => {
                             "1" => {
-                                "calendarId" => $calidA,
+                                calendarIds => {
+                                    $calidA => JSON::true,
+                                },
                                 "title" => "foo",
                                 "description" => "bar",
                                 "freeBusyStatus" => "busy",
@@ -4619,7 +4730,9 @@ sub test_calendarevent_query_shared
                                 "duration" => "PT1H",
                             },
                             "2" => {
-                                "calendarId" => $calidB,
+                                calendarIds => {
+                                    $calidB => JSON::true,
+                                },
                                 "title" => "foo",
                                 "description" => "",
                                 "freeBusyStatus" => "busy",
@@ -4730,7 +4843,9 @@ sub test_calendarevent_query_datetime
     my $res = $jmap->CallMethods([['CalendarEvent/set', { create => {
                         # Start: 2016-01-01T08:00:00Z End: 2016-01-01T09:00:00Z
                         "1" => {
-                            "calendarId" => $calid,
+                            calendarIds => {
+                                $calid => JSON::true,
+                            },
                             "title" => "1",
                             "description" => "",
                             "freeBusyStatus" => "busy",
@@ -4796,7 +4911,9 @@ sub test_calendarevent_query_datetime
     $res = $jmap->CallMethods([['CalendarEvent/set', { create => {
                         # Start: 2017-01-01T08:00:00Z End: eternity
                         "1" => {
-                            "calendarId" => $calid,
+                            calendarIds => {
+                                $calid => JSON::true,
+                            },
                             "title" => "e",
                             "description" => "",
                             "freeBusyStatus" => "busy",
@@ -4838,7 +4955,9 @@ sub test_calendarevent_query_date
     my $res = $jmap->CallMethods([['CalendarEvent/set', { create => {
                         # Start: 2016-01-01 End: 2016-01-03
                         "1" => {
-                            "calendarId" => $calid,
+                            calendarIds => {
+                                $calid => JSON::true,
+                            },
                             "title" => "1",
                             "description" => "",
                             "freeBusyStatus" => "busy",
@@ -4926,7 +5045,9 @@ sub test_calendarevent_query_date
     $res = $jmap->CallMethods([['CalendarEvent/set', { create => {
                         # Start: 2017-01-01T08:00:00Z End: eternity
                         "1" => {
-                            "calendarId" => $calid,
+                            calendarIds => {
+                                $calid => JSON::true,
+                            },
                             "title" => "2",
                             "description" => "",
                             "freeBusyStatus" => "busy",
@@ -4964,7 +5085,9 @@ sub test_calendarevent_query_text
 
     my $res = $jmap->CallMethods([['CalendarEvent/set', { create => {
                         "1" => {
-                            "calendarId" => 'Default',
+                            calendarIds => {
+                                Default => JSON::true,
+                            },
                             "title" => "foo",
                             "description" => "bar",
                             "locations" => {
@@ -5086,7 +5209,9 @@ sub test_calendarevent_query_unixepoch
     xlog $self, "create events";
     my $res = $jmap->CallMethods([['CalendarEvent/set', { create => {
       "1" => {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "title" => "Establish first ARPANET link between UCLA and SRI",
         "description" => "",
         "freeBusyStatus" => "busy",
@@ -5129,14 +5254,18 @@ sub test_calendarevent_query_sort
         ['CalendarEvent/set', {
             create => {
                 '1' => {
-                    'calendarId' => $calid,
+                    calendarIds => {
+                        $calid => JSON::true,
+                    },
                     'uid' => 'event1uid',
                     'title' => 'event1',
                     'start' => '2019-10-01T10:00:00',
                     'timeZone' => 'Etc/UTC',
                 },
                 '2' => {
-                    'calendarId' => $calid,
+                    calendarIds => {
+                        $calid => JSON::true,
+                    },
                     'uid' => 'event2uid',
                     'title' => 'event2',
                     'start' => '2018-10-01T12:00:00',
@@ -5186,21 +5315,27 @@ sub test_calendarevent_query_anchor
         ['CalendarEvent/set', {
             create => {
                 '1' => {
-                    'calendarId' => $calid,
+                    calendarIds => {
+                        $calid => JSON::true,
+                    },
                     'uid' => 'event1uid',
                     'title' => 'event1',
                     'start' => '2019-10-01T10:00:00',
                     'timeZone' => 'Etc/UTC',
                 },
                 '2' => {
-                    'calendarId' => $calid,
+                    calendarIds => {
+                        $calid => JSON::true,
+                    },
                     'uid' => 'event2uid',
                     'title' => 'event2',
                     'start' => '2019-10-02T10:00:00',
                     'timeZone' => 'Etc/UTC',
                 },
                 '3' => {
-                    'calendarId' => $calid,
+                    calendarIds => {
+                        $calid => JSON::true,
+                    },
                     'uid' => 'event3uid',
                     'title' => 'event3',
                     'start' => '2019-10-03T10:00:00',
@@ -5287,7 +5422,9 @@ sub test_calendarevent_set_caldav
     xlog $self, "create event in calendar";
     $res = $jmap->CallMethods([['CalendarEvent/set', { create => {
                         "1" => {
-                            "calendarId" => $calid,
+                            calendarIds => {
+                                $calid => JSON::true,
+                            },
                             "title" => "foo",
                             "description" => "",
                             "freeBusyStatus" => "busy",
@@ -5357,7 +5494,9 @@ EOF
     xlog $self, "update event $id";
     $res = $jmap->CallMethods([['CalendarEvent/set', { update => {
                         "$id" => {
-                            "calendarId" => $calid,
+                            calendarIds => {
+                                $calid => JSON::true,
+                            },
                             "title" => "bam",
                             "description" => "",
                             "freeBusyStatus" => "busy",
@@ -5432,7 +5571,9 @@ sub test_calendarevent_set_schedule_request
     xlog $self, "send invitation as organizer to attendee";
     my $res = $jmap->CallMethods([['CalendarEvent/set', { create => {
                         "1" => {
-                            "calendarId" => "Default",
+                            calendarIds => {
+                                Default => JSON::true,
+                            },
                             "title" => "foo",
                             "description" => "foo's description",
                             "freeBusyStatus" => "busy",
@@ -5489,7 +5630,9 @@ sub test_calendarevent_set_schedule_reply
     xlog $self, "create event";
     my $res = $jmap->CallMethods([['CalendarEvent/set', { create => {
         "1" => {
-            "calendarId" => "Default",
+            calendarIds => {
+                Default => JSON::true,
+            },
             "title" => "foo",
             "description" => "foo's description",
             "freeBusyStatus" => "busy",
@@ -5545,7 +5688,9 @@ sub test_calendarevent_set_schedule_destroy
     xlog $self, "send invitation as organizer";
     $res = $jmap->CallMethods([['CalendarEvent/set', { create => {
                         "1" => {
-                            "calendarId" => $calid,
+                            calendarIds => {
+                                $calid => JSON::true,
+                            },
                             "title" => "foo",
                             "description" => "foo's description",
                             "freeBusyStatus" => "busy",
@@ -5617,7 +5762,9 @@ sub test_calendarevent_set_schedule_cancel
     xlog $self, "send invitation as organizer";
     $res = $jmap->CallMethods([['CalendarEvent/set', { create => {
                         "1" => {
-                            "calendarId" => $calid,
+                            calendarIds => {
+                                $calid => JSON::true,
+                            },
                             "title" => "foo",
                             "description" => "foo's description",
                             "freeBusyStatus" => "busy",
@@ -5689,7 +5836,9 @@ sub test_calendarevent_set_schedule_omit
     xlog $self, "create event";
     my $res = $jmap->CallMethods([['CalendarEvent/set', { create => {
         "1" => {
-            "calendarId" => "Default",
+            calendarIds => {
+                Default => JSON::true,
+            },
             "title" => "foo",
             "description" => "foo's description",
             "freeBusyStatus" => "busy",
@@ -5748,7 +5897,9 @@ sub test_misc_creationids
             isVisible => \1,
         }}}, 'R1'],
         ['CalendarEvent/set', { create => { "e1" => {
-            "calendarId" => "#c1",
+            calendarIds => {
+                '#c1' => JSON::true,
+            },
             "title" => "bar",
             "description" => "description",
             "freeBusyStatus" => "busy",
@@ -5764,7 +5915,7 @@ sub test_misc_creationids
     my $calendar = $res->[3][1]{list}[0];
     $self->assert_str_equals("foo", $calendar->{name});
 
-    $self->assert_str_equals($calendar->{id}, $event->{calendarId});
+    $self->assert_deep_equals({$calendar->{id} => JSON::true}, $event->{calendarIds});
 }
 
 sub test_misc_timezone_expansion
@@ -5775,7 +5926,9 @@ sub test_misc_timezone_expansion
     my $jmap = $self->{jmap};
     my $calid = "Default";
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "uid" => "58ADE31-custom-UID",
         "title"=> "foo",
         "start"=> "2015-11-07T09:00:00",
@@ -5814,7 +5967,9 @@ sub test_calendarevent_set_uid
     my $jmap = $self->{jmap};
     my $calid = "Default";
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "title"=> "foo",
         "start"=> "2015-11-07T09:00:00",
         "duration"=> "PT5M",
@@ -5907,7 +6062,9 @@ sub test_calendarevent_copy
     $admintalk->setacl("user.other.#calendars.$dstCalendarId", "cassandane" => 'lrswipkxtecdn') or die;
 
     my $event =  {
-        "calendarId" => $srcCalendarId,
+        calendarIds => {
+            $srcCalendarId => JSON::true,
+        },
         "uid" => "58ADE31-custom-UID",
         "title"=> "foo",
         "start"=> "2015-11-07T09:00:00",
@@ -5938,7 +6095,9 @@ sub test_calendarevent_copy
         create => {
             1 => {
                 id => $eventId,
-                calendarId => $dstCalendarId,
+                calendarIds => {
+                    $dstCalendarId => JSON::true,
+                },
             },
         },
         onSuccessDestroyOriginal => JSON::true,
@@ -5969,7 +6128,9 @@ sub test_calendarevent_set_notitle
     my $jmap = $self->{jmap};
     my $calid = "Default";
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "uid" => "58ADE314231-some-UID",
         "start"=> "2015-11-07T09:00:00",
         "duration"=> "PT5M",
@@ -6041,7 +6202,9 @@ sub test_calendarevent_set_readonly
             ['CalendarEvent/set',{
                 create => {
                     "1" => {
-                        "calendarId" => $calendarId,
+                        calendarIds => {
+                            $calendarId => JSON::true,
+                        },
                         "uid" => "58ADE31-custom-UID",
                         "title"=> "foo",
                         "start"=> "2015-11-07T09:00:00",
@@ -6071,7 +6234,7 @@ sub test_calendarevent_set_readonly
 
     $self->assert_not_null($res->[1][1]{notCreated}{1});
     $self->assert_str_equals("invalidProperties", $res->[1][1]{notCreated}{1}{type});
-    $self->assert_str_equals("calendarId", $res->[1][1]{notCreated}{1}{properties}[0]);
+    $self->assert_str_equals("calendarIds", $res->[1][1]{notCreated}{1}{properties}[0]);
 }
 
 sub test_calendarevent_set_rsvpsequence
@@ -6150,7 +6313,9 @@ sub test_calendarevent_set_participants_recur
     my $calid = "Default";
 
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "title"=> "title",
         "start"=> "2015-11-07T09:00:00",
         "duration"=> "PT1H",
@@ -6250,7 +6415,9 @@ sub test_rscale_in_jmap_hidden_in_caldav
 
     my $calid = "Default";
     my $event =  {
-        "calendarId" => $calid,
+        calendarIds => {
+            $calid => JSON::true,
+        },
         "title"=> "foo",
         "start"=> "2015-11-07T09:00:00",
         "duration"=> "PT1H",
@@ -6442,7 +6609,9 @@ sub test_calendarevent_query_expandrecurrences
         ['CalendarEvent/set', {
             create => {
                 "1" => {
-                    calendarId => $calid,
+                    calendarIds => {
+                        $calid => JSON::true,
+                    },
                     uid => 'event1uid',
                     title => "event1",
                     description => "",
@@ -6468,7 +6637,9 @@ sub test_calendarevent_query_expandrecurrences
                     },
                 },
                 "2" => {
-                    calendarId => $calid,
+                    calendarIds => {
+                        $calid => JSON::true,
+                    },
                     uid => 'event2uid',
                     title => "event2",
                     description => "",
@@ -6521,7 +6692,9 @@ sub test_calendarevent_query_expandrecurrences_with_exrule
         ['CalendarEvent/set', {
             create => {
                 "1" => {
-                    calendarId => $calid,
+                    calendarIds => {
+                        $calid => JSON::true,
+                    },
                     uid => 'event1uid',
                     title => "event1",
                     description => "",
@@ -6589,7 +6762,9 @@ sub test_calendarevent_get_recurrenceinstances
         ['CalendarEvent/set', {
             create => {
                 "1" => {
-                    calendarId => $calid,
+                    calendarIds => {
+                        $calid => JSON::true,
+                    },
                     uid => 'event1uid',
                     title => "event1",
                     description => "",
@@ -6674,7 +6849,9 @@ sub test_calendarevent_set_recurrenceinstances
         ['CalendarEvent/set', {
             create => {
                 "1" => {
-                    calendarId => $calid,
+                    calendarIds => {
+                        $calid => JSON::true,
+                    },
                     uid => 'event1uid',
                     title => "event1",
                     description => "",
@@ -6826,7 +7003,9 @@ sub test_calendarevent_set_recurrenceinstances_rdate
         ['CalendarEvent/set', {
             create => {
                 "1" => {
-                    calendarId => $calid,
+                    calendarIds => {
+                        $calid => JSON::true,
+                    },
                     uid => 'event1uid',
                     title => "event1",
                     description => "",
@@ -6914,7 +7093,9 @@ sub test_calendarevent_set_invalidpatch
         ['CalendarEvent/set', {
             create => {
                 "1" => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     uid => 'event1uid',
                     title => "event1",
                     description => "",
@@ -6976,7 +7157,9 @@ sub test_calendarevent_blobid
         ['CalendarEvent/set', {
             create => {
                 "1" => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     uid => 'event1uid1',
                     title => "event1",
                     description => "",
@@ -7105,7 +7288,9 @@ sub test_calendarevent_debugblobid
         ['CalendarEvent/set', {
             create => {
                 "1" => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     uid => 'event1uid1',
                     title => "event1",
                     description => "",
@@ -7226,7 +7411,9 @@ sub test_crasher20191227
         ['CalendarEvent/set', {
             create => {
                 event1 =>  {
-                    "calendarId" => $calid,
+                    calendarIds => {
+                        $calid => JSON::true,
+                    },
                     "title"=> "title",
                     "description"=> "description",
                     "start"=> "2015-11-07T09:00:00",
@@ -7583,7 +7770,9 @@ sub test_calendarevent_set_too_large
     xlog $self, "create event in calendar";
     $res = $jmap->CallMethods([['CalendarEvent/set', { create => {
                         "1" => {
-                            "calendarId" => $calid,
+                            "calendarIds" => {
+                                $calid => JSON::true,
+                            },
                             "title" => "foo",
                             "description" => ('x' x 100000),
                             "freeBusyStatus" => "busy",
@@ -7606,7 +7795,9 @@ sub test_calendarevent_set_reject_duplicate_uid
         ['CalendarEvent/set', {
             create => {
                 eventA => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        'Default' => JSON::true,
+                    },
                     uid => '123456789',
                     title => 'eventA',
                     start => '2021-04-06T12:30:00',
@@ -7628,7 +7819,9 @@ sub test_calendarevent_set_reject_duplicate_uid
         ['CalendarEvent/set', {
             create => {
                 eventB => {
-                    calendarId => '#calendarB',
+                    calendarIds => {
+                        '#calendarB' => JSON::true,
+                    },
                     uid => '123456789',
                     title => 'eventB',
                     start => '2021-04-06T12:30:00',
@@ -7658,7 +7851,9 @@ sub test_calendarevent_set_isdraft
         ['CalendarEvent/set', {
             create => {
                 1 => {
-                    "calendarId" => $calid,
+                    calendarIds => {
+                        $calid => JSON::true,
+                    },
                     "title"=> "draft",
                     "start"=> "2019-12-05T09:00:00",
                     "duration"=> "PT5M",
@@ -7666,7 +7861,9 @@ sub test_calendarevent_set_isdraft
                     "isDraft" => JSON::true,
                 },
                 2 => {
-                    "calendarId" => $calid,
+                    calendarIds => {
+                        $calid => JSON::true,
+                    },
                     "title"=> "non-draft",
                     "start"=> "2019-12-05T10:00:00",
                     "duration"=> "PT5M",
@@ -7761,7 +7958,9 @@ sub test_calendarevent_get_utcstart
             create => {
                 1 => {
                     uid => 'eventuid1local',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event1",
                     start => "2019-12-06T11:21:01.8",
                     duration => "PT5M0.3S",
@@ -7814,7 +8013,9 @@ sub test_calendarevent_get_utcstart
             create => {
                 2 => {
                     uid => 'eventuid2local',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event2",
                     start => "2019-12-08T23:30:00",
                     duration => "PT2H",
@@ -7890,7 +8091,9 @@ EOF
             create => {
                 1 => {
                     uid => 'eventuid1local',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event1",
                     start => "2019-11-30T23:30:00",
                     duration => "PT6H",
@@ -7949,7 +8152,9 @@ sub test_calendarevent_set_utcstart
             create => {
                 1 => {
                     uid => 'eventuid1local',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event1",
                     utcStart => "2019-12-10T23:30:00Z",
                     duration => "PT1H",
@@ -7957,7 +8162,9 @@ sub test_calendarevent_set_utcstart
                 },
                 2 => {
                     uid => 'eventuid2local',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event2",
                     utcStart => "2019-12-10T23:30:00Z",
                     duration => "PT1H",
@@ -8047,7 +8254,9 @@ sub test_calendarevent_set_utcstart_recur
             create => {
                 1 => {
                     uid => 'eventuid1local',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event1",
                     utcStart => "2019-12-10T23:30:00Z",
                     duration => "PT1H",
@@ -8235,7 +8444,9 @@ sub test_calendarevent_set_peruser
             create => {
                 1 => {
                     uid => 'eventuid1local',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event1",
                     start => "2019-12-10T23:30:00",
                     duration => "PT1H",
@@ -8499,7 +8710,9 @@ EOF
 
     my $event = {
         uid => 'eventuid1',
-        calendarId => 'Default',
+        calendarIds => {
+            Default => JSON::true,
+        },
         title => 'event1',
         start => '2019-12-10T23:30:00',
         duration => 'PT1H',
@@ -8612,7 +8825,9 @@ sub test_calendarevent_set_linkblobid
             create => {
                 1 => {
                     uid => 'eventuid1local',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event1",
                     start => "2019-12-10T23:30:00",
                     duration => "PT1H",
@@ -8893,7 +9108,9 @@ sub test_calendarevent_set_defaultalerts
             create => {
                 1 => {
                     uid => 'eventuid1local',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event1",
                     start => "2020-01-19T11:00:00",
                     duration => "PT1H",
@@ -8902,7 +9119,9 @@ sub test_calendarevent_set_defaultalerts
                 },
                 2 => {
                     uid => 'eventuid2local',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event2",
                     start => "2020-01-19T00:00:00",
                     showWithoutTime => JSON::true,
@@ -8956,7 +9175,9 @@ sub test_calendarevent_set_defaultalerts_etag
             create => {
                 1 => {
                     uid => 'eventuid1local',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event1",
                     start => "2020-01-19T11:00:00",
                     duration => "PT1H",
@@ -8965,7 +9186,9 @@ sub test_calendarevent_set_defaultalerts_etag
                 },
                 2 => {
                     uid => 'eventuid2local',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event1",
                     start => "2020-01-21T11:00:00",
                     duration => "PT1H",
@@ -9089,7 +9312,9 @@ sub test_calendarevent_set_defaultalerts_etag_shared
             create => {
                 1 => {
                     uid => 'eventuid1local',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "eventCass",
                     start => "2020-01-19T11:00:00",
                     duration => "PT1H",
@@ -9232,7 +9457,9 @@ sub test_calendarevent_set_defaultalerts_description
             create => {
                 1 => {
                     uid => 'eventuid1local',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event1",
                     start => "2020-01-19T11:00:00",
                     duration => "PT1H",
@@ -9285,7 +9512,9 @@ sub test_calendar_defaultalerts_synctoken
             create => {
                 1 => {
                     uid => 'eventuid1local',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event1",
                     start => "2020-01-19T11:00:00",
                     duration => "PT1H",
@@ -9301,7 +9530,9 @@ sub test_calendar_defaultalerts_synctoken
                 },
                 2 => {
                     uid => 'eventuid2local',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event2",
                     start => "2020-01-21T13:00:00",
                     duration => "PT1H",
@@ -9404,7 +9635,9 @@ sub test_calendar_defaultalerts_synctoken_shared
             create => {
                 1 => {
                     uid => 'eventuid1local',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event1",
                     start => "2020-01-19T11:00:00",
                     duration => "PT1H",
@@ -9420,7 +9653,9 @@ sub test_calendar_defaultalerts_synctoken_shared
                 },
                 2 => {
                     uid => 'eventuid2local',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event2",
                     start => "2020-01-21T13:00:00",
                     duration => "PT1H",
@@ -9523,7 +9758,9 @@ sub test_calendar_set_destroy_events
             create => {
                 2 => {
                     uid => 'eventuid1local',
-                    calendarId => '#1',
+                    calendarIds => {
+                        '#1' => JSON::true,
+                    },
                     title => "event1",
                     start => "2020-03-30T11:00:00",
                     duration => "PT1H",
@@ -9575,7 +9812,9 @@ sub test_calendarevent_get_recurrenceoverrides_before_after
         ['CalendarEvent/set', {
             create => {
                 "1" => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     uid => 'event1uidlocal',
                     title => "event1",
                     start => "2020-01-01T09:00:00",
@@ -9775,7 +10014,9 @@ sub test_calendarevent_get_reduceparticipants
         ['CalendarEvent/set', {
             create => {
                 event1 => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     uid => 'event1uidlocal',
                     title => "event1",
                     start => "2020-01-01T09:00:00",
@@ -9881,7 +10122,9 @@ sub test_calendarevent_set_schedulingmessages
         ['CalendarEvent/set', {
             create => {
                 event1 => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     uid => 'event1uidlocal',
                     title => "event1",
                     start => "2020-01-01T09:00:00",
@@ -10410,7 +10653,9 @@ sub test_calendarprincipal_getavailability_showdetails
         ['CalendarEvent/set', {
             create => {
                 event1 => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     uid => 'event1uid',
                     title => "event1",
                     start => "2020-07-01T09:00:00",
@@ -10428,7 +10673,9 @@ sub test_calendarprincipal_getavailability_showdetails
                     },
                 },
                 event2 => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     uid => 'event2uid',
                     title => "event2",
                     start => "2020-08-07T11:00:00.123",
@@ -10436,7 +10683,9 @@ sub test_calendarprincipal_getavailability_showdetails
                     duration => "PT3H0.987S",
                 },
                 event3 => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     uid => 'event3uid',
                     title => "event3",
                     start => "2020-08-10T13:00:00",
@@ -10445,7 +10694,9 @@ sub test_calendarprincipal_getavailability_showdetails
                     freeBusyStatus => 'free',
                 },
                 event4 => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     uid => 'event4uid',
                     title => "event4",
                     start => "2020-08-12T09:30:00",
@@ -10454,7 +10705,9 @@ sub test_calendarprincipal_getavailability_showdetails
                     status => 'tentative',
                 },
                 event5 => {
-                    calendarId => $invisibleCalendarId,
+                    calendarIds => {
+                        $invisibleCalendarId => JSON::true,
+                    },
                     uid => 'event5uid',
                     title => "event5",
                     start => "2020-08-14T15:30:00",
@@ -10535,14 +10788,18 @@ sub test_calendarprincipal_getavailability_merged
             create => {
                 # 09:00 to 10:30: Two events adjacent to each other.
                 'event-0900-1000' => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event-0900-1000",
                     start => "2020-08-01T09:00:00",
                     timeZone => "Etc/UTC",
                     duration => "PT1H",
                 },
                 'event-1000-1030' => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event-1000-1030",
                     start => "2020-08-01T10:00:00",
                     timeZone => "Etc/UTC",
@@ -10550,14 +10807,18 @@ sub test_calendarprincipal_getavailability_merged
                 },
                 # 05:00 to 08:00: One event completely overlapping the other.
                 'event-0500-0800' => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event-0500-0800",
                     start => "2020-08-01T05:00:00",
                     timeZone => "Etc/UTC",
                     duration => "PT3H",
                 },
                 'event-0600-0700' => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event-06:00-07:00",
                     start => "2020-08-01T06:00:00",
                     timeZone => "Etc/UTC",
@@ -10565,14 +10826,18 @@ sub test_calendarprincipal_getavailability_merged
                 },
                 # 01:00 to 03:00: One event partially overlapping the other.
                 'event-0100-0200' => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event-0100-0200",
                     start => "2020-08-01T01:00:00",
                     timeZone => "Etc/UTC",
                     duration => "PT1H",
                 },
                 'event-0130-0300' => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event-0130-0300",
                     start => "2020-08-01T01:30:00",
                     timeZone => "Etc/UTC",
@@ -10580,7 +10845,9 @@ sub test_calendarprincipal_getavailability_merged
                 },
                 # 12:00 to 13:30: Overlapping events with differing busyStatus.
                 'event-1200-1300-tentative' => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event-1200-1300-tentative",
                     start => "2020-08-01T12:00:00",
                     timeZone => "Etc/UTC",
@@ -10588,7 +10855,9 @@ sub test_calendarprincipal_getavailability_merged
                     status => 'tentative',
                 },
                 'event-1200-1330-confirmed' => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event-1200-1330-confirmed",
                     start => "2020-08-01T12:00:00",
                     timeZone => "Etc/UTC",
@@ -10596,7 +10865,9 @@ sub test_calendarprincipal_getavailability_merged
                     status => 'confirmed',
                 },
                 'event-1200-1230-unavailable' => {
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     title => "event-1200-1330-unavailable",
                     start => "2020-08-01T12:00:00",
                     timeZone => "Etc/UTC",
@@ -11179,7 +11450,9 @@ sub test_calendareventnotification_get
             create => {
                 event1 => {
                     title => 'event1',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     start => '2011-01-01T04:05:06',
                     duration => 'PT1H',
                 },
@@ -11312,7 +11585,9 @@ sub test_calendareventnotification_set
             create => {
                 event1 => {
                     title => 'event1',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     start => '2011-01-01T04:05:06',
                     duration => 'PT1H',
                 },
@@ -11434,7 +11709,9 @@ sub test_calendareventnotification_query
             create => {
                 event1 => {
                     title => 'event1',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     start => '2011-01-01T04:05:06',
                     duration => 'PT1H',
                 },
@@ -11505,7 +11782,9 @@ sub test_calendareventnotification_query
             create => {
                 event2 => {
                     title => 'event2',
-                    calendarId => 'Default',
+                    calendarIds => {
+                        Default => JSON::true,
+                    },
                     start => '2012-02-02T04:05:06',
                     duration => 'PT1H',
                 },
@@ -11776,13 +12055,17 @@ sub test_calendareventnotification_aclcheck
             create => {
                 sharedEvent => {
                     title => 'sharedEvent',
-                    calendarId => $sharedCalendarId,
+                    calendarIds => {
+                        $sharedCalendarId => JSON::true,
+                    },
                     start => '2011-01-01T04:05:06',
                     duration => 'PT1H',
                 },
                 unsharedEvent => {
                     title => 'unsharedEvent',
-                    calendarId => $unsharedCalendarId,
+                    calendarIds => {
+                        $unsharedCalendarId => JSON::true,
+                    },
                     start => '2012-02-02T04:05:06',
                     duration => 'PT1H',
                 },
@@ -12303,6 +12586,7 @@ sub test_account_get_capabilities
     $self->assert_not_null($capas->{maxExpandedQueryDuration});
     $self->assert(exists $capas->{maxParticipantsPerEvent});
     $self->assert_equals(JSON::true, $capas->{mayCreateCalendar});
+    $self->assert_num_equals(1, $capas->{maxCalendarsPerEvent});
 }
 
 
