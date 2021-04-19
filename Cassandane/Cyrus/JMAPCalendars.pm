@@ -1667,7 +1667,6 @@ sub test_calendarevent_get_organizer
         },
         '29deb29d758dbb27ffa3c39b499edd85b53dd33f' => {
             '@type' => 'Participant',
-            email => 'attendee@local',
             roles => {
                 'attendee' => JSON::true,
             },
@@ -1744,7 +1743,6 @@ sub test_calendarevent_get_organizer_bogusuri
         },
         '29deb29d758dbb27ffa3c39b499edd85b53dd33f' => {
             '@type' => 'Participant',
-            email => 'attendee@local',
             roles => {
                 'attendee' => JSON::true,
             },
@@ -3315,7 +3313,6 @@ sub test_calendarevent_set_participants_patch
 
     # Add auto-generated owner participant for ORGANIZER.
     $event->{participants}{'3e6a0e46cc0af22aff762f2e1869f23de7aca482'} = {
-        email => 'foo@local',
         roles => {
             'owner' => JSON::true,
         },
@@ -10440,32 +10437,6 @@ sub test_calendarevent_set_replyto
                     },
                     start => "2011-01-01T04:05:06",
                 },
-                withemail => {
-                    title => 'withemail',
-                    participants => {
-                        owner => {
-                            '@type' => 'Participant',
-                            roles => {
-                                owner => JSON::true,
-                                attendee => JSON::true,
-                            },
-                            email => 'email@local',
-                        },
-                        attendee => {
-                            '@type' => 'Participant',
-                            roles => {
-                                attendee => JSON::true,
-                            },
-                            sendTo => {
-                                imip => 'mailto:attendee@local',
-                            },
-                        },
-                    },
-                    calendarIds => {
-                        Default => JSON::true,
-                    },
-                    start => "2011-01-01T04:05:06",
-                },
                 onlyreplyto => {
                     title => 'onlyreplyto',
                     replyTo => {
@@ -10500,7 +10471,6 @@ sub test_calendarevent_set_replyto
             ids => [
                 '#withreplyto',
                 '#withsendto',
-                '#withemail',
             ],
             properties => ['replyTo', 'title'],
         }, 'R2'],
@@ -10514,7 +10484,6 @@ sub test_calendarevent_set_replyto
     $self->assert_deep_equals({
         withreplyto => { imip => 'mailto:replyto@local' },
         withsendto => { imip => 'mailto:sendto@local' },
-        withemail => { imip => 'mailto:email@local' },
     }, \%replyTo);
 }
 
