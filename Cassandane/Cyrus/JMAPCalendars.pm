@@ -66,7 +66,8 @@ sub new
                  conversations => 'yes',
                  httpmodules => 'carddav caldav jmap',
                  httpallowcompress => 'no',
-                 jmap_nonstandard_extensions => 'yes');
+                 jmap_nonstandard_extensions => 'yes',
+                 defaultdomain => 'example.com');
 
     return $class->SUPER::new({
         config => $config,
@@ -576,7 +577,7 @@ sub test_calendar_set_sharewith
     my %map = @$acl;
     $self->assert_str_equals('lrswipkxtecdan9', $map{cassandane});
     $self->assert_str_equals('lrsn9', $map{manifold});
-    $self->assert_str_equals('lrsitedn9', $map{paraphrase});
+    $self->assert_str_equals('lrswin59', $map{paraphrase});
 
     xlog $self, "check Outbox ACL";
     $acl = $admintalk->getacl("user.master.#calendars.Outbox");
@@ -601,8 +602,8 @@ sub test_calendar_set_sharewith
         $acl = $admintalk->getacl("user.master.#jmap");
         %map = @$acl;
         $self->assert_str_equals('lrswitedn', $map{cassandane});
-        $self->assert_str_equals('lrs', $map{manifold});
-        $self->assert_str_equals('lrswitedn', $map{paraphrase});
+        $self->assert_str_equals('lrsn', $map{manifold});
+        $self->assert_str_equals('lrswin', $map{paraphrase});
     }
 
     xlog $self, "Clear initial syslog";
@@ -630,8 +631,8 @@ sub test_calendar_set_sharewith
         $acl = $admintalk->getacl("user.master.#jmap");
         %map = @$acl;
         $self->assert_str_equals('lrswitedn', $map{cassandane});
-        $self->assert_str_equals('lrswitedn', $map{manifold});
-        $self->assert_str_equals('lrswitedn', $map{paraphrase});
+        $self->assert_str_equals('lrswin', $map{manifold});
+        $self->assert_str_equals('lrswin', $map{paraphrase});
     }
 
     xlog $self, "Remove the access for manifold";
@@ -653,7 +654,7 @@ sub test_calendar_set_sharewith
     $acl = $admintalk->getacl("user.master.#calendars.$CalendarId");
     %map = @$acl;
     $self->assert_str_equals('lrswipkxtecdan9', $map{cassandane});
-    $self->assert_str_equals('lrsitedn9', $map{manifold});
+    $self->assert_str_equals('lrswin59', $map{manifold});
     $self->assert_null($map{paraphrase});
 
     xlog $self, "check Outbox ACL";
@@ -680,7 +681,7 @@ sub test_calendar_set_sharewith
         $acl = $admintalk->getacl("user.master.#jmap");
         %map = @$acl;
         $self->assert_str_equals('lrswitedn', $map{cassandane});
-        $self->assert_str_equals('lrswitedn', $map{manifold});
+        $self->assert_str_equals('lrswin', $map{manifold});
         $self->assert_str_equals('lr', $map{paraphrase});
     }
 }
@@ -13205,4 +13206,527 @@ EOF
     $self->assert_str_equals('Europe/Berlin', $event->{timeZone});
     $self->assert_null($event->{timeZones});
 }
+
+sub test_calendar_set_sharewith_acl
+    :min_version_3_5 :needs_component_jmap
+{
+    my ($self) = @_;
+    my $jmap = $self->{jmap};
+    my $admin = $self->{adminstore}->get_client();
+
+    $admin->create("user.test1");
+
+    my $res = $jmap->CallMethods([
+        ['Calendar/set', {
+            create => {
+                '1' => {
+                    name => 'A',
+                }
+            },
+        }, 'R1'],
+    ]);
+    my $calendarId = $res->[0][1]{created}{1}{id};
+    $self->assert_not_null($calendarId);
+
+    my @testCases = ({
+        rights => {
+            mayReadFreeBusy => JSON::true,
+        },
+        acl => '9',
+    }, {
+        rights => {
+            mayReadItems => JSON::true,
+        },
+        acl => 'lrw',
+    }, {
+        rights => {
+            mayAddItems => JSON::true,
+        },
+        acl => 'win',
+    }, {
+        rights => {
+            mayUpdatePrivate => JSON::true,
+        },
+        acl => 'snw',
+    }, {
+        rights => {
+            mayRSVP => JSON::true,
+        },
+        acl => '7',
+    }, {
+        rights => {
+            mayUpdateOwn => JSON::true,
+        },
+        acl => 'w6',
+    }, {
+        rights => {
+            mayUpdateAll => JSON::true,
+        },
+        acl => 'swn',
+        wantRights => {
+            mayUpdateAll => JSON::true,
+            mayUpdatePrivate => JSON::true, # implied by UpdateAll
+        },
+    }, {
+        rights => {
+            mayRemoveOwn => JSON::true,
+        },
+        acl => 'w5',
+    }, {
+        rights => {
+            mayRemoveAll => JSON::true,
+        },
+        acl => 'ted',
+    }, {
+        rights => {
+            mayAdmin => JSON::true,
+        },
+        acl => 'a',
+    });
+
+    foreach(@testCases) {
+
+        xlog "Run test for acl $_->{acl}";
+
+        $res = $jmap->CallMethods([
+            ['Calendar/set', {
+                update => {
+                    $calendarId => {
+                        shareWith => {
+                            test1 => $_->{rights},
+                        },
+                    },
+                },
+            }, 'R1'],
+            ['Calendar/get', {
+                ids => [$calendarId],
+                properties => ['shareWith'],
+            }, 'R2'],
+        ]);
+
+        $_->{wantRights} ||= $_->{rights};
+
+        my %mergedrights = ((
+            mayReadFreeBusy => JSON::false,
+            mayReadItems => JSON::false,
+            mayAddItems => JSON::false,
+            mayUpdatePrivate => JSON::false,
+            mayRSVP => JSON::false,
+            mayUpdateOwn => JSON::false,
+            mayUpdateAll => JSON::false,
+            mayRemoveOwn => JSON::false,
+            mayRemoveAll => JSON::false,
+            mayAdmin => JSON::false,
+            mayDelete => JSON::false,
+        ), %{$_->{wantRights}});
+
+        $self->assert_deep_equals(\%mergedrights,
+            $res->[1][1]{list}[0]{shareWith}{test1});
+        my %acl = @{$admin->getacl("user.cassandane.#calendars.$calendarId")};
+        $self->assert_str_equals($_->{acl}, $acl{test1});
+    }
+}
+
+sub test_calendarevent_set_updateown_removeown
+    :min_version_3_5 :needs_component_jmap
+{
+    my ($self) = @_;
+    my $jmap = $self->{jmap};
+
+    xlog "Create sharee user";
+    my $admin = $self->{adminstore}->get_client();
+    $self->{instance}->create_user("sharee");
+    my $service = $self->{instance}->get_service("http");
+    my $shareeJmap = Mail::JMAPTalk->new(
+        user => 'sharee',
+        password => 'pass',
+        host => $service->host(),
+        port => $service->port(),
+        scheme => 'http',
+        url => '/jmap/',
+    );
+    $shareeJmap->DefaultUsing([
+        'urn:ietf:params:jmap:core',
+        'https://cyrusimap.org/ns/jmap/calendars',
+        'urn:ietf:params:jmap:calendars',
+    ]);
+
+    my $res = $jmap->CallMethods([
+        ['Calendar/set', {
+            update => {
+                Default => {
+                    shareWith => {
+                        sharee => {
+                            mayReadItems => JSON::true,
+                            mayUpdateOwn => JSON::true,
+                            mayUpdatePrivate => JSON::true,
+                            mayRemoveOwn => JSON::true,
+                        },
+                    },
+                },
+            },
+        }, 'R1'],
+    ]);
+    $self->assert(exists $res->[0][1]{updated}{Default});
+
+    xlog "Create events";
+    $res = $jmap->CallMethods([
+        ['CalendarEvent/set', {
+            create => {
+                eventCassOwner => {
+                    calendarIds => {
+                        'Default' => JSON::true,
+                    },
+                    '@type' => 'JSEvent',
+                    title => 'eventCassOwner',
+                    replyTo => {
+                        imip => 'mailto:cassandane@example.com',
+                    },
+                    participants => {
+                        part1 => {
+                            '@type' => 'Participant',
+                            sendTo => {
+                                imip => 'mailto:part1@local',
+                            },
+                            roles => {
+                                attendee => JSON::true,
+                            },
+                        },
+                    },
+                    start => '2021-01-01T01:00:00',
+                    timeZone => 'Europe/Berlin',
+                    duration => 'PT1H',
+                },
+                eventShareeOwner => {
+                    calendarIds => {
+                        'Default' => JSON::true,
+                    },
+                    '@type' => 'JSEvent',
+                    title => 'eventShareeOwner',
+                    replyTo => {
+                        imip => 'mailto:sharee@example.com',
+                    },
+                    participants => {
+                        part1 => {
+                            '@type' => 'Participant',
+                            sendTo => {
+                                imip => 'mailto:part1@local',
+                            },
+                            roles => {
+                                attendee => JSON::true,
+                            },
+                        },
+                    },
+                    start => '2021-01-01T01:00:00',
+                    timeZone => 'Europe/Berlin',
+                    duration => 'PT1H',
+                },
+                eventNoOwner => {
+                    calendarIds => {
+                        'Default' => JSON::true,
+                    },
+                    '@type' => 'JSEvent',
+                    title => 'eventNoOwner',
+                    start => '2021-01-02T01:00:00',
+                    timeZone => 'Europe/Berlin',
+                    duration => 'PT1H',
+                },
+            },
+        }, 'R1'],
+    ]);
+    my $eventCassOwner = $res->[0][1]{created}{eventCassOwner}{id};
+    $self->assert_not_null($eventCassOwner);
+    my $eventShareeOwner = $res->[0][1]{created}{eventShareeOwner}{id};
+    $self->assert_not_null($eventShareeOwner);
+    my $eventNoOwner = $res->[0][1]{created}{eventNoOwner}{id};
+    $self->assert_not_null($eventNoOwner);
+
+    xlog "Update private event properties as sharee";
+    $res = $shareeJmap->CallMethods([
+        ['CalendarEvent/set', {
+            accountId => 'cassandane',
+            update => {
+                $eventCassOwner => {
+                    color => 'pink',
+                },
+                $eventShareeOwner => {
+                    color => 'pink',
+                },
+                $eventNoOwner => {
+                    color => 'pink',
+                },
+            },
+        }, 'R1'],
+    ]);
+    $self->assert(exists $res->[0][1]{updated}{$eventCassOwner});
+    $self->assert(exists $res->[0][1]{updated}{$eventShareeOwner});
+    $self->assert(exists $res->[0][1]{updated}{$eventNoOwner});
+
+    xlog "Update non-private event properties as sharee";
+    $res = $shareeJmap->CallMethods([
+        ['CalendarEvent/set', {
+            accountId => 'cassandane',
+            update => {
+                $eventCassOwner => {
+                    title => 'eventCassOwnerUpdated',
+                },
+                $eventShareeOwner => {
+                    title => 'eventShareeOwnerUpdated',
+                },
+                $eventNoOwner => {
+                    title => 'eventNoOwnerUpdated',
+                },
+            },
+        }, 'R1'],
+    ]);
+    $self->assert_str_equals('forbidden',
+        $res->[0][1]{notUpdated}{$eventCassOwner}{type});
+    $self->assert(exists $res->[0][1]{updated}{$eventShareeOwner});
+    $self->assert(exists $res->[0][1]{updated}{$eventNoOwner});
+
+    xlog "Destroy events as sharee";
+    $res = $shareeJmap->CallMethods([
+        ['CalendarEvent/set', {
+            accountId => 'cassandane',
+            destroy => [
+                $eventCassOwner,
+                $eventShareeOwner,
+                $eventNoOwner,
+            ],
+        }, 'R1'],
+    ]);
+    $self->assert_str_equals('forbidden',
+        $res->[0][1]{notDestroyed}{$eventCassOwner}{type});
+    $self->assert(grep /$eventShareeOwner/, @{$res->[0][1]{destroyed}});
+    $self->assert(grep /$eventNoOwner/, @{$res->[0][1]{destroyed}});
+}
+
+sub test_calendarevent_set_updateown_removeown_caldav
+    :min_version_3_5 :needs_component_jmap
+{
+    my ($self) = @_;
+    my $jmap = $self->{jmap};
+    my $caldav = $self->{caldav};
+
+    xlog "Create sharee user";
+    my $admin = $self->{adminstore}->get_client();
+    $self->{instance}->create_user("sharee");
+    my $service = $self->{instance}->get_service("http");
+    my $shareeCaldav = Net::CalDAVTalk->new(
+        user => "sharee",
+        password => 'pass',
+        host => $service->host(),
+        port => $service->port(),
+        scheme => 'http',
+        url => '/',
+        expandurl => 1,
+    );
+
+    my $res = $jmap->CallMethods([
+        ['Calendar/set', {
+            update => {
+                Default => {
+                    shareWith => {
+                        sharee => {
+                            mayReadItems => JSON::true,
+                            mayUpdateOwn => JSON::true,
+                            mayUpdatePrivate => JSON::true,
+                            mayRemoveOwn => JSON::true,
+                        },
+                    },
+                },
+            },
+        }, 'R1'],
+    ]);
+    $self->assert(exists $res->[0][1]{updated}{Default});
+
+    xlog "Create event with cassandane owner";
+    my $cassOwnerIcal = <<'EOF';
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Apple Inc.//Mac OS X 10.9.5//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Vienna:20160928T160000
+DURATION:PT1H
+UID:40d6fe3c-6a51-489e-823e-3ea22f427a3e
+DTSTAMP:20150928T132434Z
+CREATED:20150928T125212Z
+SUMMARY:cassowner
+ORGANIZER:mailto:cassandane@example.com
+ATTENDEE:mailto:attendee@example.com
+LAST-MODIFIED:20150928T132434Z
+END:VEVENT
+END:VCALENDAR
+EOF
+    $res = $caldav->Request('PUT',
+        '/dav/calendars/user/cassandane/Default/cassowner.ics',
+        $cassOwnerIcal, 'Content-Type' => 'text/calendar');
+
+    xlog "Create event with sharee owner";
+    my $shareeOwnerIcal = <<'EOF';
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Apple Inc.//Mac OS X 10.9.5//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Vienna:20161028T160000
+DURATION:PT1H
+UID:7e55d2c1-d197-4e51-b9b6-a78c8a38fd78
+DTSTAMP:20150928T132434Z
+CREATED:20150928T125212Z
+SUMMARY:shareeowner
+ORGANIZER:mailto:sharee@example.com
+ATTENDEE:mailto:attendee@example.com
+LAST-MODIFIED:20150928T132434Z
+END:VEVENT
+END:VCALENDAR
+EOF
+    $caldav->Request('PUT',
+        '/dav/calendars/user/sharee/cassandane.Default/shareeowner.ics',
+        $shareeOwnerIcal, 'Content-Type' => 'text/calendar');
+
+    xlog "Create event with no owner";
+    my $noOwnerIcal = <<'EOF';
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Apple Inc.//Mac OS X 10.9.5//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Vienna:20161128T160000
+DURATION:PT1H
+UID:80cdbc93-c602-4591-a8d2-f67a804e6acf
+DTSTAMP:20150928T132434Z
+CREATED:20150928T125212Z
+SUMMARY:noowner
+LAST-MODIFIED:20150928T132434Z
+END:VEVENT
+END:VCALENDAR
+EOF
+    $caldav->Request('PUT',
+        '/dav/calendars/user/sharee/cassandane.Default/noowner.ics',
+        $noOwnerIcal, 'Content-Type' => 'text/calendar');
+
+    xlog "Update event with sharee owner as sharee";
+    $shareeOwnerIcal = <<'EOF';
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Apple Inc.//Mac OS X 10.9.5//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Vienna:20161028T160000
+DURATION:PT1H
+UID:7e55d2c1-d197-4e51-b9b6-a78c8a38fd78
+DTSTAMP:20150928T132434Z
+CREATED:20150928T125212Z
+SUMMARY:shareeownerUpdated
+ORGANIZER:mailto:sharee@example.com
+ATTENDEE:mailto:attendee@example.com
+LAST-MODIFIED:20150928T132434Z
+END:VEVENT
+END:VCALENDAR
+EOF
+    $shareeCaldav->Request('PUT',
+        '/dav/calendars/user/sharee/cassandane.Default/shareeowner.ics',
+        $shareeOwnerIcal, 'Content-Type' => 'text/calendar');
+
+    xlog "Update event with no owner as sharee";
+    $noOwnerIcal = <<'EOF';
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Apple Inc.//Mac OS X 10.9.5//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Vienna:20161128T160000
+DURATION:PT1H
+UID:80cdbc93-c602-4591-a8d2-f67a804e6acf
+DTSTAMP:20150928T132434Z
+CREATED:20150928T125212Z
+SUMMARY:noowner
+LAST-MODIFIED:20150928T132434Z
+END:VEVENT
+END:VCALENDAR
+EOF
+    $shareeCaldav->Request('PUT',
+        '/dav/calendars/user/sharee/cassandane.Default/noowner.ics',
+        $noOwnerIcal, 'Content-Type' => 'text/calendar');
+
+    xlog "XXXXXXXXXXXX Update per-user property as sharee";
+    $cassOwnerIcal = <<'EOF';
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Apple Inc.//Mac OS X 10.9.5//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Vienna:20160928T160000
+DURATION:PT1H
+UID:40d6fe3c-6a51-489e-823e-3ea22f427a3e
+DTSTAMP:20150928T132434Z
+CREATED:20150928T125212Z
+SUMMARY:cassowner
+COLOR:pink
+ORGANIZER:mailto:cassandane@example.com
+ATTENDEE:mailto:attendee@example.com
+LAST-MODIFIED:20150928T132434Z
+END:VEVENT
+END:VCALENDAR
+EOF
+    $shareeCaldav->Request('PUT',
+        '/dav/calendars/user/sharee/cassandane.Default/cassowner.ics',
+        $cassOwnerIcal, 'Content-Type' => 'text/calendar');
+
+    xlog "Update property as sharee";
+    $cassOwnerIcal = <<'EOF';
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Apple Inc.//Mac OS X 10.9.5//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Vienna:20160928T160000
+DURATION:PT1H
+UID:40d6fe3c-6a51-489e-823e-3ea22f427a3e
+DTSTAMP:20150928T132434Z
+CREATED:20150928T125212Z
+SUMMARY:cassownerUpdated
+ORGANIZER:mailto:cassandane@example.com
+ATTENDEE:mailto:attendee@example.com
+LAST-MODIFIED:20150928T132434Z
+END:VEVENT
+END:VCALENDAR
+EOF
+    # annoyingly CalDAV talk aborts for HTTP status >= 400
+    my $href = '/dav/calendars/user/sharee/cassandane.Default/cassowner.ics';
+    my $rawResponse = $shareeCaldav->{ua}->request('PUT',
+        $shareeCaldav->request_url($href), {
+            content => $cassOwnerIcal,
+            headers => {
+                'Content-Type' => 'text/calendar',
+                'Authorization' => $shareeCaldav->auth_header(),
+            },
+        },
+    );
+    $self->assert_num_equals(403, $rawResponse->{status});
+
+    xlog "Delete event with sharee owner as sharee";
+    $shareeCaldav->Request('DELETE',
+        '/dav/calendars/user/sharee/cassandane.Default/shareeowner.ics');
+
+    xlog "Delete event with no owner as sharee";
+    $shareeCaldav->Request('DELETE',
+        '/dav/calendars/user/sharee/cassandane.Default/noowner.ics');
+
+    xlog "Delete event with cassandane owner as sharee";
+    $href = '/dav/calendars/user/sharee/cassandane.Default/cassowner.ics';
+    $rawResponse = $shareeCaldav->{ua}->request('DELETE',
+        $shareeCaldav->request_url($href), {
+            headers => {
+                'Authorization' => $shareeCaldav->auth_header(),
+            },
+        },
+    );
+    $self->assert_num_equals(403, $rawResponse->{status});
+
+
+}
+
 1;
