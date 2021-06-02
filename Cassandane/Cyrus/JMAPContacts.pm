@@ -3782,5 +3782,53 @@ sub test_contact_set_toolarge
 
 }
 
+sub test_yyy
+    :min_version_3_5 :needs_component_jmap
+{
+    my ($self) = @_;
+    my $jmap = $self->{jmap};
+    my $carddav = $self->{carddav};
+
+    $carddav->NewAddressBook('addrbookA') or die;
+
+    my $res = $jmap->CallMethods([
+        ['Contact/set', {
+            create => {
+                contactA => {
+                    uid => '123456789',
+                    lastName => 'contactA',
+                },
+            }
+        }, 'R1'],
+    ]);
+    my $contactA = $res->[0][1]{created}{contactA}{id};
+    $self->assert_not_null($contactA);
+
+=pod
+    $res = $jmap->CallMethods([
+        ['Contact/set', {
+            create => {
+                contactB => {
+                    uid => '123456789',
+                    lastName => 'contactB',
+                },
+            }
+        }, 'R1'],
+    ]);
+    $self->assert_str_equals('invalidProperties',
+        $res->[0][1]{notCreated}{type}{contactB}{type});
+    $self->assert_deep_equals(['uid'],
+        $res->[0][1]{notCreated}{type}{contactB}{properties});
+=cut
+
+=pod
+    $res = $jmap->CallMethods([
+        ['Contact/query', {
+        }, 'R1'],
+    ]);
+    $self->assert_deep_equals([$contactA], $res->[0][1]{ids});
+=cut
+}
+
 
 1;
