@@ -22114,4 +22114,121 @@ EOF
         $res->[1][1]{list}[0]{preview});
 }
 
+sub test_email_query_threadkeywords_sieve
+    :min_version_3_5 :needs_component_sieve :needs_component_jmap :ConvCountedFlags :JMAPExtensions
+{
+    my ($self) = @_;
+    my $jmap = $self->{jmap};
+
+    my $res = $jmap->CallMethods([
+        ['Email/set', {
+            create => {
+                email1 => {
+                    mailboxIds => {
+                        '$inbox' => JSON::true,
+                    },
+                    messageId => [
+                        'msgid.email1@local',
+                    ],
+                    from => [{
+                        name => '', email => 'addr1@local'
+                    }],
+                    to => [{
+                        name => '', email => 'addr2@local'
+                    }],
+                    subject => 'email1',
+                    bodyStructure => {
+                        type => 'text/plain',
+                        partId => 'part1',
+                    },
+                    bodyValues => {
+                        part1 => {
+                            value => 'email1',
+                        }
+                    },
+                },
+                email2 => {
+                    mailboxIds => {
+                        '$inbox' => JSON::true,
+                    },
+                    messageId => [
+                        'msgid.email2@local',
+                    ],
+                    inReplyTo => [
+                        'msgid.email1@local',
+                    ],
+                    from => [{
+                        name => '', email => 'addr2@local'
+                    }],
+                    to => [{
+                        name => '', email => 'addr1@local'
+                    }],
+                    subject => 'Re: email1',
+                    bodyStructure => {
+                        type => 'text/plain',
+                        partId => 'part1',
+                    },
+                    bodyValues => {
+                        part1 => {
+                            value => 'email2',
+                        }
+                    },
+                },
+            },
+        }, 'R1'],
+    ]);
+    my $email1Id = $res->[0][1]->{created}{email1}{id};
+    $self->assert_not_null($email1Id);
+    my $email2Id = $res->[0][1]->{created}{email2}{id};
+    $self->assert_not_null($email2Id);
+    my $threadId = $res->[0][1]->{created}{email1}{threadId};
+    $self->assert_not_null($threadId);
+    $self->assert_str_equals($threadId,
+        $res->[0][1]->{created}{email2}{threadId});
+
+    my $imap = $self->{store}->get_client();
+
+    $self->{instance}->install_sieve_script(<<'EOF'
+require ["x-cyrus-jmapquery", "x-cyrus-log", "variables", "fileinto"];
+if
+  allof( not string :is "${stop}" "Y",
+    jmapquery text:
+  {
+    "operator" : "NOT",
+    "conditions" : [
+        {
+           "someInThreadHaveKeyword" : "$Flagged"
+        }
+    ]
+  }
+.
+  )
+{
+  fileinto "INBOX.matches";
+}
+EOF
+    );
+
+    my $rawMessage = <<'EOF';
+From: addr1@local
+To: addr2@local
+Subject: Re: email1
+Date: Mon, 13 Apr 2020 15:34:03 +0200
+Message-Id: <msgid.email3@local>
+In-Reply-To: <msgid.email2@local>
+MIME-Version: 1.0
+
+email3
+EOF
+    $rawMessage =~ s/\r?\n/\r\n/gs;
+
+    my $msg = Cassandane::Message->new();
+    $msg->set_lines(split /\n/, $rawMessage);
+    $self->{instance}->deliver($msg);
+
+    xlog "Assert that message got moved into INBOX.matches";
+    $self->{store}->set_folder('matches');
+    $self->check_messages({ 1 => $msg }, check_guid => 0);
+}
+
 1;
